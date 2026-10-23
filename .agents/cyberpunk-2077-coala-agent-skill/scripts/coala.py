@@ -2014,6 +2014,8 @@ CODE_LANGS = {
     ".hh": "cpp", ".rb": "ruby", ".php": "php", ".swift": "swift", ".dart": "dart", ".lua": "lua",
     ".sh": "shell", ".bash": "shell", ".zsh": "shell", ".sql": "sql", ".gd": "gdscript",
     ".ex": "elixir", ".exs": "elixir",
+    ".reds": "redscript",                                     # patch local: Redscript (CP2077) — reaplicar após update do motor
+    ".ps1": "powershell", ".psm1": "powershell",              # patch local: PowerShell — reaplicar após update do motor
 }
 CODE_SKIP_DIRS = frozenset((
     "node_modules", "bower_components", "vendor", "third_party", "dist", "build", "out", "target", "bin", "obj",
@@ -2116,6 +2118,12 @@ CODE_RULES = {
     "elixir": [_rx("module", r"defmodule\s+(?P<name>[\w.]+)"),
                _rx("function", r"defp?\s+(?P<name>[\w?!]+)\s*(?P<sig>\([^)]*\))?"),
                _rx("macro", r"defmacrop?\s+(?P<name>\w+)")],
+    "redscript": [_CLASSY_TYPE,
+                  _rx("module", r"module\s+(?P<name>[\w.]+)"),
+                  _rx("function", r"(?:(?:public|private|protected|final|static|exec|native|const|cb)\s+)*"
+                                  r"func\s+(?P<name>\w+)\s*(?P<sig>\([^)]*\))")],
+    "powershell": [_rx("function", r"(?i)(?:function|filter)\s+"
+                                   r"(?:(?:global|script|local|private|readonly)\s*:\s*)?(?P<name>[\w*-]+)")],
 }
 _CONTAINER_KINDS = {"class", "interface", "impl", "type", "module", "enum", "struct", "trait", "object",
                     "record", "namespace", "protocol", "extension", "mixin", "actor"}
