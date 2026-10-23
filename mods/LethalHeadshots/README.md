@@ -3,15 +3,17 @@
 **Every headshot kills.** One clean hit to the head drops the target — no damage
 multipliers, no armour math, no boss damage cap.
 
-- Version: **1.0.0**
+- Version: **1.0.1**
 - Game: **Cyberpunk 2077 2.5** (PC)
-- Requires: [RED4ext](https://github.com/WopsS/RED4ext/releases) + [redscript](https://github.com/jac3km4/redscript/releases) **0.5.32+**
+- Requires: [redscript](https://github.com/jac3km4/redscript/releases) **0.5.32+**
+  (RED4ext is **not** required for this mod)
 - License: MIT
 
 ## Install
 
-1. Install **RED4ext** and **redscript** into the Cyberpunk 2077 folder.
-2. Download `LethalHeadshots-1.0.0.zip` from the
+1. Install **redscript** into the Cyberpunk 2077 folder (extract its release zip
+   into the game root).
+2. Download `LethalHeadshots-1.0.1.zip` from the
    [releases page](https://github.com/frederico-kluser/cyberpunk-2077-mods/releases).
 3. Extract it into the Cyberpunk 2077 folder (merge folders). You should end up
    with:
@@ -126,3 +128,4 @@ pwsh -File tools/deploy.ps1 -Launch            # deploy and start the game
 
 See [docs/TESTING.md](../../docs/TESTING.md) for the full validation and manual
 test matrix.
+

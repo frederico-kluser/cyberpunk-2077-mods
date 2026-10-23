@@ -36,7 +36,7 @@ script treats any line starting with `ERROR` as a failure.
 
 ## 3. Compile/load smoke test
 
-1. Install RED4ext and redscript 0.5.32+ into the game folder.
+1. Install redscript 0.5.32+ into the game folder (RED4ext is not needed).
 2. `pwsh -File tools/deploy.ps1`
 3. Start the game and quit after reaching the main menu (or load a save).
 4. Open `r6\logs\redscript_rCURRENT.log` and confirm:

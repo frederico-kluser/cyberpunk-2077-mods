@@ -17,21 +17,21 @@ validação e release.
 
 | Mod | Versão | O que faz |
 | --- | --- | --- |
-| [**Lethal Headshots**](mods/LethalHeadshots) | 1.0.0 | Todo headshot mata na hora — sem multiplicadores de dano e sem o teto de dano dos bosses. Civis, aliados e NPCs protegidos por missão são poupados por predefinição. |
+| [**Lethal Headshots**](mods/LethalHeadshots) | 1.0.1 | Todo headshot mata na hora — sem multiplicadores de dano e sem o teto de dano dos bosses. Civis, aliados e NPCs protegidos por missão são poupados por predefinição. |
 
 ## Requisitos
 
 - Cyberpunk 2077 para PC, **patch 2.5** (versão do jogo `3.0.88.x`).
-- [RED4ext](https://github.com/WopsS/RED4ext/releases) instalado na pasta do jogo.
 - [redscript](https://github.com/jac3km4/redscript/releases) **0.5.32 ou mais
   recente** (a 0.5.32 é a primeira versão com suporte ao bundle de scripts da 2.5).
 
-> O redscript compila `r6/scripts/**/*.reds` quando o jogo arranca. Não é
-> preciso iniciar com `-modded`; essa flag é apenas para pacotes REDmod.
+> O redscript compila `r6/scripts/**/*.reds` quando o jogo arranca, e o próprio
+> engine faz isso — **o RED4ext não é necessário** para estes mods. Não é preciso
+> iniciar com `-modded`; essa flag é apenas para pacotes REDmod.
 
 ## Instalar um mod
 
-1. Instale o RED4ext e o redscript na pasta do Cyberpunk 2077.
+1. Instale o redscript na pasta do Cyberpunk 2077 (extraia o zip do release na raiz do jogo).
 2. Descarregue o zip do mod na [página de releases](https://github.com/frederico-kluser/cyberpunk-2077-mods/releases).
 3. Extraia o zip na pasta do Cyberpunk 2077, aceitando a fusão de pastas. Os
    scripts ficam em `r6\scripts\<ModId>\`.
@@ -94,3 +94,4 @@ Não reporte problemas de segurança em público. Veja [SECURITY.md](SECURITY.md
 ## Licença
 
 MIT. Veja [LICENSE](LICENSE).
+

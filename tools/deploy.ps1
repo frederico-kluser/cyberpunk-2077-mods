@@ -38,8 +38,8 @@ Write-Host "$copied ficheiro(s) instalados em $targetDir"
 if (-not (Test-Path -LiteralPath (Join-Path $game 'engine\tools\scc.exe'))) {
   Write-Warning 'redscript (engine\tools\scc.exe) não foi encontrado. Instale o redscript antes de arrancar o jogo.'
 }
-if (-not (Test-Path -LiteralPath (Join-Path $game 'red4ext'))) {
-  Write-Warning 'A pasta red4ext\ não foi encontrada. O redscript precisa do RED4ext instalado.'
+if (-not (Test-Path -LiteralPath (Join-Path $game 'r6\scripts'))) {
+  New-Item -ItemType Directory -Force -Path (Join-Path $game 'r6\scripts') | Out-Null
 }
 
 if ($Launch) {

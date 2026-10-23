@@ -11,6 +11,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-10-23
+
+### Fixed
+
+- Corrected the runtime requirements: the mod only needs **redscript 0.5.32+**.
+  RED4ext was listed as a dependency, but the engine compiles `r6/scripts` at
+  launch on its own.
+
 ## [1.0.0] - 2026-10-23
 
 ### Added

@@ -64,11 +64,11 @@ $($manifest.description)
 
 REQUISITOS
   - Cyberpunk 2077 para PC, versao $($manifest.gameVersion)
-  - RED4ext (https://github.com/WopsS/RED4ext/releases)
   - redscript $($manifest.requires.redscript) ou superior (https://github.com/jac3km4/redscript/releases)
+  - RED4ext NAO e necessario para este mod.
 
 INSTALACAO
-  1. Instale o RED4ext e o redscript na raiz do jogo.
+  1. Instale o redscript na raiz do jogo (extraia o zip do release).
   2. Extraia este zip para a raiz do jogo ("Cyberpunk 2077"), aceitando a
      fusao de pastas. Os ficheiros ficam em r6\scripts\$($manifest.id)\.
   3. Inicie o jogo normalmente (nao e preciso -modded).
