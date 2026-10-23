@@ -1,0 +1,54 @@
+# =============================================================================
+# Release — builds the mod on a clean runner and publishes the zip when a
+# semver tag (vX.Y.Z) is pushed. See docs/RELEASING.md.
+# =============================================================================
+
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Publish release
+    runs-on: windows-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Verify tag matches mod.json
+        shell: pwsh
+        run: |
+          $tag = $env:GITHUB_REF_NAME
+          if ($tag -notmatch '^v(\d+\.\d+\.\d+)$') { throw "Invalid tag '$tag'" }
+          $expected = $Matches[1]
+          $manifest = Get-Content mods/LethalHeadshots/mod.json -Raw | ConvertFrom-Json
+          if ($manifest.version -ne $expected) {
+            throw "mod.json version $($manifest.version) does not match tag $tag"
+          }
+
+      - name: Build
+        shell: pwsh
+        run: pwsh -File tools/build.ps1
+
+      - name: Publish GitHub release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = $env:GITHUB_REF_NAME
+          $files = @(Get-ChildItem dist -Filter '*.zip' | ForEach-Object { $_.FullName })
+          $files += (Join-Path (Resolve-Path dist) 'SHA256SUMS.txt')
+          gh release create $tag @files --title "Lethal Headshots $tag" --generate-notes --verify-tag

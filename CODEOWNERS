@@ -1,0 +1,10 @@
+# CODEOWNERS — cyberpunk-2077-mods
+#
+# Every change must be reviewed by the repository owner before merge.
+# The last matching pattern wins.
+
+*       @frederico-kluser
+
+/mods/  @frederico-kluser
+/tools/ @frederico-kluser
+/docs/  @frederico-kluser
