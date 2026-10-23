@@ -1,0 +1,36 @@
+# =============================================================================
+# Release Please (optional, manual)
+#
+# The repository ships releases through tags: `docs/RELEASING.md` describes the
+# manual SemVer calculation and `release.yml` builds/attaches the zip when a
+# `vX.Y.Z` tag is pushed. This workflow is the scaffolded alternative for
+# maintainers who prefer release-please to open the release PR. It never runs
+# automatically; trigger it from the Actions tab.
+# =============================================================================
+
+name: Release Please (optional)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-please-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release-please:
+    name: Release PR / GitHub Release
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Release Please
+        uses: googleapis/release-please-action@0dfd8538845b8e92600d271a895a5372865d4062 # v5.0.0
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
