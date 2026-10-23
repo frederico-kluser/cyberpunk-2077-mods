@@ -1,0 +1,145 @@
+# =============================================================================
+# CI — cyberpunk-2077-mods
+#
+# The job named `build` is the aggregator and the status check required by the
+# branch ruleset. Do not rename it without updating .github/rulesets/*.json.
+# =============================================================================
+
+name: CI
+
+on:
+  push:
+    branches:
+      - "main"
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  REDSCRIPT_VERSION: "0.5.32"
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Parse PowerShell scripts
+        shell: pwsh
+        run: |
+          $failed = $false
+          Get-ChildItem -Path tools -Filter *.ps1 -File | ForEach-Object {
+            $tokens = $null
+            $errors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile(
+              $_.FullName, [ref]$tokens, [ref]$errors) | Out-Null
+            if ($errors.Count -gt 0) {
+              $failed = $true
+              Write-Host "::error file=$($_.FullName)::$($errors -join '; ')"
+            } else {
+              Write-Host "OK $($_.Name)"
+            }
+          }
+          if ($failed) { exit 1 }
+
+      - name: Validate JSON and module layout
+        shell: pwsh
+        run: pwsh -File tools/validate.ps1 -Static
+
+      - name: Redscript syntax lint
+        shell: pwsh
+        run: |
+          $dir = Join-Path $env:RUNNER_TEMP 'redscript'
+          New-Item -ItemType Directory -Force -Path $dir | Out-Null
+          $exe = Join-Path $dir 'redscript-cli.exe'
+          $url = "https://github.com/jac3km4/redscript/releases/download/v$env:REDSCRIPT_VERSION/redscript-cli.exe"
+          Invoke-WebRequest -Uri $url -OutFile $exe -UseBasicParsing
+          $output = & $exe lint -s mods/LethalHeadshots/src/reds 2>&1 | Out-String
+          Write-Host $output
+          if ($output -match '(?m)^ERROR') { exit 1 }
+
+  test:
+    name: Test & package
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Build distributable
+        shell: pwsh
+        run: pwsh -File tools/build.ps1
+
+      - name: Inspect package layout
+        shell: pwsh
+        run: |
+          $zip = Get-ChildItem dist -Filter 'LethalHeadshots-*.zip' | Select-Object -First 1
+          if (-not $zip) { throw 'No package produced' }
+
+          Add-Type -AssemblyName System.IO.Compression.FileSystem
+          $archive = [System.IO.Compression.ZipFile]::OpenRead($zip.FullName)
+          try {
+            $names = $archive.Entries.FullName
+            $required = @(
+              'r6/scripts/LethalHeadshots/LethalHeadshots.reds',
+              'r6/scripts/LethalHeadshots/Config.reds',
+              'INSTALL.txt',
+              'LICENSE'
+            )
+            foreach ($entry in $required) {
+              if ($names -notcontains $entry) { throw "Missing $entry in $($zip.Name)" }
+              Write-Host "OK $entry"
+            }
+          } finally {
+            $archive.Dispose()
+          }
+          Get-Content dist/SHA256SUMS.txt
+
+      - name: Upload package
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: LethalHeadshots-package
+          path: |
+            dist/*.zip
+            dist/SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 14
+
+  build:
+    name: build
+    needs: [lint, test]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Commits convencionais (últimos 25)
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import re, subprocess, sys
+          header = re.compile(r'^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\([^)]*\))?!?: .+')
+          skip = re.compile(r'^(Merge |Revert "|Reapply "|fixup!|squash!)')
+          out = subprocess.run(['git', 'log', '--pretty=tformat:%s', '-n', '25', 'HEAD'],
+                               capture_output=True, text=True).stdout
+          bad = 0
+          for s in out.splitlines():
+              s = s.strip()
+              if not s or skip.match(s):
+                  continue
+              h = re.sub(r'\s+\(#\d+\)$', '', s)
+              if not header.match(h) or len(h) > 72:
+                  print('ERRO: mensagem fora de Conventional Commits:', s); bad = 1
+              else:
+                  print('OK  :', s)
+          sys.exit(bad)
+          PY

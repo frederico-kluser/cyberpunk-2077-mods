@@ -1,0 +1,18 @@
+{
+  "id": "LethalHeadshots",
+  "name": "Lethal Headshots",
+  "version": "1.0.0",
+  "gameVersion": "2.5",
+  "author": "Frederico Kluser",
+  "license": "MIT",
+  "description": "Every headshot kills. A single Redscript hook on the game's damage pipeline, with optional protection for civilians, allies and quest NPCs.",
+  "homepage": "https://github.com/frederico-kluser/cyberpunk-2077-mods/tree/main/mods/LethalHeadshots",
+  "tags": ["gameplay", "combat", "damage", "headshot", "redscript"],
+  "requires": {
+    "redscript": ">=0.5.32"
+  },
+  "files": [
+    "src/reds/LethalHeadshots.reds",
+    "src/reds/Config.reds"
+  ]
+}

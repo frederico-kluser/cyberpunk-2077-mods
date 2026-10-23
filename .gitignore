@@ -1,0 +1,16 @@
+# Build output
+dist/
+*.zip
+*.sha256
+
+# Local tool cache (redscript-cli, game paths)
+.cache/
+.game-dir
+
+# Editor / OS noise
+.vscode/
+.idea/
+*.user
+Thumbs.db
+Desktop.ini
+.DS_Store
