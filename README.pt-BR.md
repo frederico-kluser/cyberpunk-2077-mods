@@ -73,6 +73,7 @@ docs/
   ARCHITECTURE.md         como o pipeline de dano funciona e porque o mod o interceta
   TESTING.md              como validar uma alteração, dentro e fora do jogo
   RELEASING.md            versionamento e checklist de release
+  ADDING_A_MOD.md         como adicionar o proximo mod a este monorepo
 tools/
   validate.ps1            verificações estáticas + type-check de Redscript
   build.ps1               empacota todos os mods em dist/*.zip
@@ -94,4 +95,5 @@ Não reporte problemas de segurança em público. Veja [SECURITY.md](SECURITY.md
 ## Licença
 
 MIT. Veja [LICENSE](LICENSE).
+
 

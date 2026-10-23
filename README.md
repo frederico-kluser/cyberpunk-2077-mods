@@ -74,6 +74,7 @@ docs/
   ARCHITECTURE.md         how the damage pipeline works and why the mod hooks it
   TESTING.md              how to validate a change, in and out of the game
   RELEASING.md            versioning and release checklist
+  ADDING_A_MOD.md         how to add the next mod to this monorepo
 tools/
   validate.ps1            static checks + Redscript type-check
   build.ps1               packages every mod into dist/*.zip
