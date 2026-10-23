@@ -18,17 +18,17 @@ release pipeline.
 
 | Mod | Version | What it does |
 | --- | --- | --- |
-| [**Lethal Headshots**](mods/LethalHeadshots) | 1.0.0 | Every headshot kills instantly — no damage multipliers, no boss damage caps. Civilians, allies and quest-protected NPCs are spared by default. |
+| [**Lethal Headshots**](mods/LethalHeadshots) | 1.0.1 | Every headshot kills instantly — no damage multipliers, no boss damage caps. Civilians, allies and quest-protected NPCs are spared by default. |
 
 ## Requirements
 
 - Cyberpunk 2077 for PC, **patch 2.5** (game version `3.0.88.x`).
-- [RED4ext](https://github.com/WopsS/RED4ext/releases) installed in the game folder.
 - [redscript](https://github.com/jac3km4/redscript/releases) **0.5.32 or newer**
   (0.5.32 is the first release that supports the 2.5 script bundle).
 
-> Redscript compiles `r6/scripts/**/*.reds` when the game starts. Nothing needs
-> to be launched with `-modded`; that flag is only for REDmod packages.
+> Redscript compiles `r6/scripts/**/*.reds` when the game starts, and the engine
+> does it natively — **RED4ext is not required** for these mods. Nothing needs to
+> be launched with `-modded`; that flag is only for REDmod packages.
 
 ## Install a mod
 
@@ -94,3 +94,4 @@ Please do not report security issues in public. See [SECURITY.md](SECURITY.md).
 ## License
 
 MIT. See [LICENSE](LICENSE).
+

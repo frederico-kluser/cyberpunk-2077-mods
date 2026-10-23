@@ -88,7 +88,9 @@ what "the bullet hit the head" actually means.
 
 - **Redscript module name:** `LethalHeadshots`. Redscript resolves `@wrapMethod`
   chains in load order; wrapping (not replacing) keeps other damage mods alive.
-- **REDmod is not required.** The mod is a plain `r6/scripts` Redscript mod.
+- **REDmod and RED4ext are not required.** The mod is a plain `r6/scripts`
+  Redscript mod; the engine compiles it at launch through
+  `engine/config/base/scripts.ini`.
 - **Other `@replaceMethod(DamageSystem.ProcessLocalizedDamage)` mods** can bypass
   the wrapper. If a damage mod misbehaves, test with only one enabled.
 - **Patch changes:** `ProcessLocalizedDamage` has been stable since 2.0, but a
