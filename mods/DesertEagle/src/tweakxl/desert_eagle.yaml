@@ -21,6 +21,24 @@ Items.DesertEagle:
   # Anula a compensação IK herdada (senão o retículo fica desalinhado do
   # impacto quando a geometria muda de forma) — ver matriz de diagnóstico.
   ikOffset: {x: 0, y: 0, z: 0}
+  # Liga os modificadores balísticos ao item (sem isto ficam órfãos e a arma
+  # usa os valores herdados da Nue). '+=' APPENDS to the inherited array —
+  # keeps the Nue's own statModifiers intact.
+  statModifiers: += [
+    DesertEagle.Stats.DPS,
+    DesertEagle.Stats.CycleTime,
+    DesertEagle.Stats.MagazineCapacity,
+    DesertEagle.Stats.ReloadTime,
+    DesertEagle.Stats.EmptyReloadTime,
+    DesertEagle.Stats.RecoilKickMin,
+    DesertEagle.Stats.RecoilKickMax,
+    DesertEagle.Stats.RecoilTime,
+    DesertEagle.Stats.RecoilRecovery,
+    DesertEagle.Stats.WeaponNoise,
+    DesertEagle.Stats.HeadshotMultiplier,
+    DesertEagle.Stats.EffectiveRange,
+    DesertEagle.Stats.MaximumRange
+  ]
 
 # ---------------------------------------------------------------------------
 # Calibração balística — identidade ".50 AE hand cannon"
