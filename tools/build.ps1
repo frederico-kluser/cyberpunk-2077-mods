@@ -50,7 +50,9 @@ foreach ($modDir in (Get-ChildItem -LiteralPath (Get-ModsRoot) -Directory)) {
   $scriptsDir = Join-Path $stage "r6\scripts\$($manifest.id)"
   New-Item -ItemType Directory -Force -Path $scriptsDir | Out-Null
 
-  $sources = Get-ChildItem -LiteralPath (Join-Path $modDir.FullName 'src\reds') -Filter '*.reds' -File
+  # @() keeps a single .reds file an array — under StrictMode a lone FileInfo
+  # has no .Count and the packager would crash
+  $sources = @(Get-ChildItem -LiteralPath (Join-Path $modDir.FullName 'src\reds') -Filter '*.reds' -File)
   if ($sources.Count -eq 0) {
     throw "Erro: $($manifest.id) não tem fontes .reds — Solução: veja mods/$($manifest.id)/src/reds."
   }

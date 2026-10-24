@@ -103,11 +103,43 @@ def transform_app(app):
                     new_comps.append(comp)
                 # vanilla part meshes are dropped (our mesh has the whole body)
                 continue
+            if ctype == "entMeshComponent":
+                # vanilla part SHADOW meshes do not exist in our mod; the body
+                # component casts its own shadows (castShadows=Always)
+                depot = mesh_depot(cd)
+                if depot and "desert_eagle" not in depot:
+                    continue
+            if ctype == "entVisualControllerComponent":
+                # stale cooked dependency list of vanilla part meshes
+                cd["appearanceDependency"] = []
             new_comps.append(comp)
         a["components"] = new_comps
 
         # resolvedDependencies must be empty or the game loads the vanilla mesh
         a["resolvedDependencies"] = []
+
+        # compiledData is the cooked mirror of the component list — the engine
+        # renders from the components (cookedAppearanceData is empty here), but
+        # the stale mirror would keep vanilla chunk references alive. Mirror
+        # the cleaned components so no vanilla mesh survives anywhere.
+        cd = a.get("compiledData")
+        # EXPERIMENTAL (DE_MIRROR=1): mirror the cleaned components into the
+        # cooked cache. WolvenKit's RedPackage converter currently rejects the
+        # mirrored form, and the cache is provably INERT while
+        # cookedAppearanceData is empty (the engine renders from the
+        # components) — so the mirror stays off by default.
+        if os.environ.get("DE_MIRROR") == "1" and isinstance(cd, dict):
+            data = cd.get("Data", cd)
+            if isinstance(data, dict) and isinstance(data.get("Chunks"), list):
+                before = len(data["Chunks"])
+                data["Chunks"] = copy.deepcopy(new_comps)
+                # CruidDict maps chunk index -> component id; rebuild it in step
+                # or the RedPackage converter rejects the file
+                data["CruidDict"] = {
+                    str(i): comp.get("Data", comp).get("id", "0")
+                    for i, comp in enumerate(new_comps)
+                }
+                print(f"APP_SUMMARY compiledData chunks={before} -> {len(new_comps)} (mirrored components + CruidDict)")
 
     return app
 
