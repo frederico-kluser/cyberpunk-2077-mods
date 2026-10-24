@@ -44,7 +44,7 @@ restart the game (the scripts are compiled on startup).
 | --- | --- | --- |
 | `SpareCivilians` | `false` | When `true`, civilians survive a headshot. Off by default: any headshot kills. |
 | `SpareAllies` | `false` | When `true`, characters with a friendly attitude towards V survive. Off by default. |
-| `SpareProtectedTargets` | `true` | God-mode / scripted-invulnerable / quest-protected NPCs survive. **Keep this on** unless you want to risk breaking quests. |
+| `SpareProtectedTargets` | `false` | God-mode / scripted-invulnerable / quest-protected NPCs also take the kill. No exceptions by default — set to `true` if you want to protect quest-critical NPCs. |
 
 ```redscript
 module LethalHeadshots.Config
@@ -80,29 +80,36 @@ Consequences:
 
 While aiming, the mod previews the outcome: a red **QUE OTA** label appears
 above the crosshair whenever the crosshair is over a head that would die on the
-next shot. It is purely cosmetic — aiming never kills (the projection pipeline
-is guarded) — and the label mirrors the same guards the kill uses, including the
-config options above. The label is a plain `inkText` parented to the game's own
-crosshair container (no Cyber Engine Tweaks, no Codeware, no RED4ext) and is
-created lazily on first use.
+next shot. It is purely cosmetic — aiming never kills.
+
+The label is driven by an aim **ticker** (`DelayCallback`, ~8 checks/second),
+not by the engine's aim-projection pipeline (which never fires reliably in
+game). Each tick asks `TargetingSystem.GetLookAtObject`/`GetLookAtPosition`
+where the crosshair ray hits and compares that point with the target's `Head`
+slot — the same slot the game's own AI aims at — so the label is precise in any
+pose (standing, crouched, seated). The label is a plain `inkText` parented to
+the game's own crosshair container (no Cyber Engine Tweaks, no Codeware, no
+RED4ext) and is created lazily on first use.
 
 The widget is owned by `gameuiCrosshairContainerController` — the controller
-that owns the crosshair widget tree — and the player only carries a bridge to
-it, re-established on every `OnInitialize`/`OnPlayerAttach`. Earlier versions
-captured the HUD root once, in `OnInitialize`, through `GetPlayer()`: the HUD
-can initialize before the player exists (and is rebuilt across loading screens),
-so that capture silently failed and the label never appeared. Keeping the
-widget on the controller side makes it independent of the player/HUD
-initialization order.
+that owns the crosshair widget tree — and the player only carries a bridge plus
+the running ticker, re-established on every `OnInitialize`/`OnPlayerAttach`.
+Earlier versions captured the HUD root once through `GetPlayer()` (the HUD can
+initialize before the player exists) and later relied on the aim-projection
+pipeline for the signal; both silently failed, which is why the label never
+appeared. Polling the aim removes that whole class of failure.
 
 ## How it works (short version)
 
 The mod wraps `DamageSystem.ProcessLocalizedDamage` — the same function where
-the vanilla game decides that a hit was a headshot. When the hit qualifies, it
-adds `hitFlag.Kill` to the attack. The engine's own `ProcessInstantKill` runs
-immediately afterwards and drops the target's Health stat pool to its minimum,
-which is the game's native instant-kill path (used by finishers and scripted
-kills).
+the vanilla game decides that a hit was a headshot. When the hit qualifies it
+does two things, in this order:
+
+1. adds `hitFlag.Kill` to the attack, so the engine's own `ProcessInstantKill`
+   (running immediately afterwards) drops the target's Health stat pool to its
+   minimum — the game's native instant-kill path;
+2. calls `ScriptedPuppet.Kill()` on the target right away — the game's force
+   kill — so the target dies even if another mod interferes with the flag.
 
 This is deliberately **not** a damage multiplier:
 
@@ -124,8 +131,9 @@ guards, is in [docs/ARCHITECTURE.md](../../docs/ARCHITECTURE.md).
 - **Other mods that `@replaceMethod` the same function** (instead of wrapping it)
   can bypass this mod. Load order between Redscript mods is by module name; if
   another damage mod misbehaves, test with only this mod enabled.
-- **Protected targets stay alive** while `SpareProtectedTargets` is on. That is
-  intentional: one-shotting a quest-critical NPC can corrupt a playthrough.
+- **Protected targets die too, by default.** `SpareProtectedTargets` is `false`:
+  one-shotting a quest-critical NPC can break a playthrough. Set it to `true` to
+  spare god-mode / quest-protected NPCs.
 - **Patch 2.5 only.** Older redscript versions cannot compile the 2.5 script
   bundle, and older game versions may not expose the same damage pipeline.
 
@@ -135,9 +143,9 @@ guards, is in [docs/ARCHITECTURE.md](../../docs/ARCHITECTURE.md).
 | --- | --- |
 | Nothing happens | `r6\logs\redscript_rCURRENT.log` must end with a successful compile and list `LethalHeadshots`. |
 | Compile error in the log | You are probably on redscript < 0.5.32 or on a different game patch. |
-| Works on enemies, not on a specific boss | The boss is probably protected (god mode / quest flag). That is `SpareProtectedTargets`. |
+| Works on enemies, not on a specific boss | The boss is probably protected (god mode / quest flag) and `SpareProtectedTargets` is `true`. Defaults spare nobody. |
 | Civilians survive a headshot | `SpareCivilians` is set to `true`; set it to `false` to kill everyone. |
-| Headshots kill, but the "QUE OTA" label never appears | The label needs the HUD bridge: it is re-established when the HUD attaches to the player (loading a save, re-equipping a weapon). Check the compile log first — if the game compiled an old `r6\scripts` copy, redeploy with `tools/deploy.ps1`. |
+| Headshots kill, but the "QUE OTA" label never appears | The label polls the aim ~8×/s while the HUD is attached; draw a weapon and check `r6\logs\redscript_rCURRENT.log` for a successful compile. If the game compiled an old `r6\scripts` copy, redeploy with `tools/deploy.ps1`. |
 
 ## Development
 

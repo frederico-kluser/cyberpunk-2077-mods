@@ -17,7 +17,7 @@ validação e release.
 
 | Mod | Versão | O que faz |
 | --- | --- | --- |
-| [**Lethal Headshots**](mods/LethalHeadshots) | 1.0.1 | Todo headshot mata na hora — qualquer NPC, civis incluídos. Sem multiplicadores de dano e sem o teto dos bosses; só NPCs com god mode/protegidos por missão são poupados. |
+| [**Lethal Headshots**](mods/LethalHeadshots) | 1.1.0 | Todo headshot mata na hora — qualquer NPC, sem exceções. Sem multiplicadores de dano e sem o teto dos bosses: o acerto chama o kill forçado do próprio jogo. Mostra ainda o rótulo vermelho «QUE OTA» com a mira sobre uma cabeça letal. |
 | [**Desert Eagle**](mods/DesertEagle) | 0.1.0 | Pistola Desert Eagle .50 AE por cima do esqueleto e das animações da Tsunami Nue, produzida por um pipeline automatizado de Blender (alinhamento, rigging, LODs, exportação). |
 
 ## Requisitos

@@ -1,39 +1,97 @@
 /*
- * Lethal Headshots — every headshot kills.
+ * Lethal Headshots — every headshot kills. Brute force edition.
  *
- * Hook: DamageSystem.ProcessLocalizedDamage, the same place where the vanilla
- * game decides that a hit was a headshot (see docs/ARCHITECTURE.md).
+ * Kill: DamageSystem.ProcessLocalizedDamage is wrapped (the same place where
+ * the vanilla game decides that a hit was a headshot). When the hit qualifies
+ * the mod marks it with hitFlag.Kill AND calls ScriptedPuppet.Kill() on the
+ * spot — the game's own force-kill — so the target dies no matter what the
+ * rest of the pipeline does with the flag.
  *
- * Instead of scaling damage (which bosses clamp and armour/resistance reduce),
- * the mod marks the hit with hitFlag.Kill. DamageSystem.ProcessInstantKill runs
- * immediately after ProcessLocalizedDamage and drops the target's Health stat
- * pool to its minimum, which is the engine's own instant-kill path.
+ * Label: the on-screen "QUE OTA" label does NOT rely on the aim-projection
+ * pipeline (it never fires reliably in game). Instead a DelayCallback ticker
+ * polls the aim every ~0.12 s: TargetingSystem.GetLookAtObject/Position plus
+ * the target's "Head" slot (the same slot the game's AI aims with) tell
+ * exactly whether the crosshair is over the head.
  *
- * The on-screen "QUE OTA" label is a plain inkText added to the game's own
- * crosshair container — no Cyber Engine Tweaks, no Codeware, no RED4ext. The
- * widget lives in gameuiCrosshairContainerController's own widget tree: that
- * controller always owns its root widget, while the player puppet may not
- * exist yet when the HUD initializes (and is a fresh instance after every
- * loading screen). The player only holds a bridge to the live controller,
- * re-established on every OnPlayerAttach.
+ * The label is a plain inkText added to the game's own crosshair container —
+ * no Cyber Engine Tweaks, no Codeware, no RED4ext. The widget lives in
+ * gameuiCrosshairContainerController's widget tree; the player only carries a
+ * bridge plus the running ticker, re-established on every OnPlayerAttach.
  */
 
 module LethalHeadshots
 
 import LethalHeadshots.Config.*
 
-// True while the crosshair is over a head that the mod would kill.
-@addField(PlayerPuppet)
-public let m_lhAimOnHead: Bool;
-
 // Bridge to the live crosshair HUD controller, re-established on every
 // OnInitialize / OnPlayerAttach so it survives loading screens and respawns.
 @addField(PlayerPuppet)
 public let m_lhCrosshair: wref<gameuiCrosshairContainerController>;
 
+// The running aim ticker (strong ref so it outlives the delay system's hold).
+@addField(PlayerPuppet)
+public let m_lhTicker: ref<LhAimTicker>;
+
 // The label widget, created lazily inside the controller's widget tree.
 @addField(gameuiCrosshairContainerController)
 public let m_lhText: ref<inkText>;
+
+// ---------------------------------------------------------------------------
+// Aim ticker: polls the crosshair-over-head state and drives the label.
+// ---------------------------------------------------------------------------
+
+public class LhAimTicker extends DelayCallback {
+
+  private let m_ctrl: wref<gameuiCrosshairContainerController>;
+  private let m_player: wref<PlayerPuppet>;
+  private let m_overHead: Bool;
+
+  // Starts (or restarts) the ticker for a player/controller pair. A previous
+  // ticker is retired instead of reused, so no double schedules can stack.
+  public final static func Start(player: ref<PlayerPuppet>, ctrl: ref<gameuiCrosshairContainerController>) -> Void {
+    if !IsDefined(player) || !IsDefined(ctrl) {
+      return;
+    };
+
+    if IsDefined(player.m_lhTicker) {
+      player.m_lhTicker.m_ctrl = null;
+      player.m_lhTicker.m_player = null;
+    };
+
+    let ticker: ref<LhAimTicker> = new LhAimTicker();
+    ticker.m_ctrl = ctrl;
+    ticker.m_player = player;
+    ticker.m_overHead = false;
+    player.m_lhTicker = ticker;
+    ticker.Schedule();
+  }
+
+  private final func Schedule() -> Void {
+    let delaySystem: ref<DelaySystem> = GameInstance.GetDelaySystem(GetGameInstance());
+    if IsDefined(delaySystem) {
+      delaySystem.DelayCallback(this, 0.12, false);
+    };
+  }
+
+  public func Call() -> Void {
+    // The HUD or the player is gone (loading screen, despawn): stop ticking.
+    if !IsDefined(this.m_ctrl) || !IsDefined(this.m_player) {
+      return;
+    };
+
+    let overHead: Bool = IsCrosshairOnHead(this.m_player);
+    if NotEquals(overHead, this.m_overHead) {
+      this.m_overHead = overHead;
+      this.m_ctrl.LhSetLabelVisible(overHead);
+    };
+
+    this.Schedule();
+  }
+}
+
+// ---------------------------------------------------------------------------
+// HUD label
+// ---------------------------------------------------------------------------
 
 @wrapMethod(gameuiCrosshairContainerController)
 protected cb func OnInitialize() -> Bool {
@@ -42,7 +100,7 @@ protected cb func OnInitialize() -> Bool {
   let player: ref<PlayerPuppet> = GetPlayer(GetGameInstance());
   if IsDefined(player) {
     player.m_lhCrosshair = this;
-    player.m_lhAimOnHead = false;
+    LhAimTicker.Start(player, this);
   };
   return ret;
 }
@@ -56,7 +114,7 @@ protected cb func OnPlayerAttach(playerGameObject: ref<GameObject>) -> Bool {
   let player: ref<PlayerPuppet> = playerGameObject as PlayerPuppet;
   if IsDefined(player) {
     player.m_lhCrosshair = this;
-    player.m_lhAimOnHead = false;
+    LhAimTicker.Start(player, this);
   };
   return ret;
 }
@@ -104,56 +162,72 @@ public final func LhSetLabelVisible(visible: Bool) -> Void {
   this.m_lhText.SetVisible(true);
 }
 
-@wrapMethod(DamageSystem)
-private final func ProcessLocalizedDamage(hitEvent: ref<gameHitEvent>) -> Void {
-  wrappedMethod(hitEvent);
-
-  // The projection pipeline runs while the player aims. Use it to show the
-  // label, without touching the hit itself.
-  if hitEvent.projectionPipeline {
-    UpdateAimLabel(hitEvent);
-    return;
-  };
-
-  if IsLethalHeadshot(hitEvent) {
-    hitEvent.attackData.AddFlag(hitFlag.Kill, n"LethalHeadshots");
-  };
-}
-
-// The preview target is cleared when the crosshair leaves every target, which
-// is the signal to hide the label.
+// Instant hide when the crosshair leaves every target (holster, scene change).
 @wrapMethod(DamageSystem)
 public final func ClearPreviewTargetStruct() -> Void {
   wrappedMethod();
   let player: ref<PlayerPuppet> = GetPlayer(GetGameInstance());
-  if IsDefined(player) {
-    player.m_lhAimOnHead = false;
-    SetQueOtaVisible(player, false);
+  if IsDefined(player) && IsDefined(player.m_lhCrosshair) {
+    player.m_lhCrosshair.LhSetLabelVisible(false);
   };
 }
 
-// Mirrors the kill guards: the label is on exactly when the next shot on the
-// head would kill. Anything else — an invalid, dead or player target included —
-// counts as "not over a lethal head", so the label never sticks on screen.
-func UpdateAimLabel(hitEvent: ref<gameHitEvent>) -> Void {
-  let player: ref<PlayerPuppet> = GetPlayer(GetGameInstance());
-  if !IsDefined(player) {
-    return;
+// ---------------------------------------------------------------------------
+// Aim geometry: is the crosshair over the target's head?
+// ---------------------------------------------------------------------------
+
+// Brute force and pose independent: the aim ray's hit point is compared with
+// the target's "Head" slot — the same slot the game's own AI aims at. Works
+// standing, crouched or seated. Falls back to a height heuristic when the
+// target has no Head slot.
+func IsCrosshairOnHead(player: ref<PlayerPuppet>) -> Bool {
+  let targetingSystem: ref<TargetingSystem> = GameInstance.GetTargetingSystem(player.GetGame());
+  if !IsDefined(targetingSystem) {
+    return false;
   };
 
-  let target: ref<ScriptedPuppet> = hitEvent.target as ScriptedPuppet;
-  let overHead: Bool = IsDefined(target) && !target.IsDead() && !target.IsPlayer() && IsHeadshot(hitEvent) && !ShouldSpare(target);
-  if Equals(overHead, player.m_lhAimOnHead) {
-    return;
+  let target: ref<ScriptedPuppet> = targetingSystem.GetLookAtObject(player, true, true) as ScriptedPuppet;
+  if !IsDefined(target) || target.IsDead() || target.IsPlayer() {
+    return false;
   };
 
-  player.m_lhAimOnHead = overHead;
-  SetQueOtaVisible(player, overHead);
+  if ShouldSpare(target) {
+    return false;
+  };
+
+  let aimPoint: Vector4 = targetingSystem.GetLookAtPosition(player, true, true);
+  let headPos: Vector4;
+  if AIActionHelper.GetTargetSlotPosition(target, n"Head", headPos) {
+    return Vector4.Distance(aimPoint, headPos) < 0.30;
+  };
+
+  // No Head slot: assume a standing humanoid and use the height above the root.
+  let rootPos: Vector4 = target.GetWorldPosition();
+  return aimPoint.Z - rootPos.Z > 1.35;
 }
 
-func SetQueOtaVisible(player: ref<PlayerPuppet>, visible: Bool) -> Void {
-  if IsDefined(player.m_lhCrosshair) {
-    player.m_lhCrosshair.LhSetLabelVisible(visible);
+// ---------------------------------------------------------------------------
+// Kill pipeline
+// ---------------------------------------------------------------------------
+
+@wrapMethod(DamageSystem)
+private final func ProcessLocalizedDamage(hitEvent: ref<gameHitEvent>) -> Void {
+  wrappedMethod(hitEvent);
+
+  // The projection pipeline runs when the player merely aims: never kill on it.
+  if hitEvent.projectionPipeline {
+    return;
+  };
+
+  if IsLethalHeadshot(hitEvent) {
+    // Flag for the engine's own instant-kill pass...
+    hitEvent.attackData.AddFlag(hitFlag.Kill, n"LethalHeadshots");
+
+    // ...and the brute call: kill the puppet right now, no matter what.
+    let target: ref<ScriptedPuppet> = hitEvent.target as ScriptedPuppet;
+    if IsDefined(target) {
+      target.Kill(hitEvent.attackData.GetInstigator());
+    };
   };
 }
 
@@ -164,7 +238,7 @@ func SetQueOtaVisible(player: ref<PlayerPuppet>, visible: Bool) -> Void {
  *  - it is not area-of-effect damage (grenades, explosions);
  *  - the target is a living, non-player puppet;
  *  - the hit shape is the head;
- *  - the target is not spared by the configuration.
+ *  - the target is not spared by the configuration (defaults spare nobody).
  */
 func IsLethalHeadshot(hitEvent: ref<gameHitEvent>) -> Bool {
   if hitEvent.projectionPipeline {
