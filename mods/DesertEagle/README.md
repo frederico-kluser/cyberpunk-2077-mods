@@ -12,18 +12,17 @@ ver [`src/blender/README.md`](src/blender/README.md).
 
 | Etapa | Estado |
 | --- | --- |
-| Worktree + estrutura do projeto | feito (PR [#13](https://github.com/frederico-kluser/cyberpunk-2077-mods/pull/13) fundido) |
-| Pipeline Blender (import/align/rig/lods/export) | feito, teste `SMOKE_TEST_OK` |
 | Toolchain local (Blender 5.2.3 LTS + 4 add-ons + WolvenKit 9.1.0) | feito — ver [`docs/TOOLCHAIN.md`](docs/TOOLCHAIN.md) |
-| Extração do molde Tsunami Nue (rig/anims/mesh/app/ent + GLB) | feito — 100 ficheiros + template GLB em [`assets/extracted/`](assets/extracted) |
-| Ossos reais do `.rig` da Nue (11 ossos) | feito — [`assets/_inventory/nue_bones.txt`](assets/_inventory/nue_bones.txt), mapeados no config |
-| **Modelo CS2 Desert Eagle** (escolha do dono) | feito — `desert_eagle_cs2.glb` (44 MB, 15k vértices, texturizado) |
-| **Retarget CS2 → ossos da Nue** (estágio novo do pipeline) | feito — 6/6 ossos renomeados, pesos 100% preservados; inclui `clip` → `mag_slot` (carregador) |
-| **Animações CS2** (50 actions: shoot/reload/draw/idle) | identificadas — 22 reais mapeadas para o CP2077 (ver [`src/blender/configs/desert_eagle_cs2.json`](src/blender/configs/desert_eagle_cs2.json)) |
-| 1.º build real (align→retarget→rig→lods→export) | feito — `PIPELINE_OK`, artefactos em [`assets/work/`](assets/work) |
-| Registos TweakXL/ArchiveXL + `.archive` final | **feito** — `scripts/pack_archive.ps1` → `assets/work/release/desert_eagle.archive` (6 entradas, unbundle 6/6 ✓) + loader `.xl` + TweakXL `.yaml` |
-| **`.mesh` da Desert Eagle** | **feito** — construído por código (`export_geometry.py` → `mesh_write.py` → CR2W), bbox 0,146×0,038×0,253 m verificada |
-| Injeção no jogo | **bloqueada por restrição do dono** — pacote pronto em `assets/work/release/`, nada vai para o jogo até autorização |
+| Molde Tsunami Nue (rig/anims/mesh/app/ent extraídos) | feito — [`assets/extracted/`](assets/extracted) |
+| **Modelo CS2 Desert Eagle** (escolha do dono) | feito — `desert_eagle_cs2.glb` (44 MB, 15k vértices) |
+| **Retarget CS2 → ossos da Nue** | feito — 6/6 ossos, pesos 100% preservados (inclui `clip` → `mag_slot`) |
+| **`.mesh` próprio** (escritor de buffer, sem GUI) | feito — bbox 0,146×0,038×0,253 m, 2 LODs, skinning verificado |
+| **Texturas CS2** (`.xbm` writer: RGBA + BC5) | feito — albedo + normais 4K, roundtrip CR2W verificado |
+| **Materiais** (`metal_base` + nossos mapas) | feito — a renderizar com o visual CS2 (ver renders em `docs/renders/`) |
+| **Animações CS2** (13 clips → `.anims`, sem redMod) | feito — codecs Simd + Compressed, roundtrip CR2W, integração malha×animação verificada |
+| **Pacote final** (archive 10 entradas + `.xl` + yaml) | feito — `verify_release.py` (35+ checks) `RELEASE_VERIFY_OK` |
+| **Build de 1 comando** | feito — `scripts/build_release.ps1` (geometria → anims → archive → verify) |
+| Injeção no jogo | **bloqueada por restrição do dono** — ver [`docs/ACCEPTANCE.md`](docs/ACCEPTANCE.md) |
 
 ## Requisitos
 
@@ -67,19 +66,31 @@ Os atributos de gameplay (dano, cadência, carregador, recuo) vivem em
 `src/tweakxl/desert_eagle.yaml`; a estética e as variantes de cor em
 `src/archivexl/`. Os ficheiros `.reds` só expõem o helper de spawn.
 
+## Construir (1 comando)
+
+```powershell
+pwsh -File scripts/build_release.ps1
+```
+
+Reconstrói o mod do zero — geometria CS2 → material → `.mesh` → `.app/.ent` →
+texturas → animações CS2 → factory → `.archive` — e **recusa terminar sem
+`RELEASE_VERIFY_OK`**. Saída em `assets/work/release/`.
+
 ## Como o ativo é produzido
 
 ```text
-modelo bruto (FBX/GLB, licença permissiva)
-  → Blender: alinhamento sobre a Tsunami Nue (bounding box + âncoras)
-  → Blender: rigging pelos nomes de ossos do .rig (Slide/Magazine/Trigger)
-  → Blender: LOD 0 + LOD 1 (regra das hitboxes)
-  → export .glb → WolvenKit: import sobre o .mesh base
-  → .app/.ent sincronizados (baseEntity, components, resolvedDependencies limpos)
+modelo CS2 (GLB) + texturas CS2 (4K)
+  → Blender: retarget de ossos + fit à bbox da Nue + skinning (top-4)
+  → escritor de buffer .mesh (streams PT_Short4N/…) → CR2W
+  → escritor .xbm (albedo RGBA + normais BC5, green flip DirectX)
+  → material metal_base.mt com os nossos mapas
+  → .app/.ent transformados do molde (refs vanilla limpos, anims repontadas)
+  → 13 clips CS2 amostrados → codecs .anims (Simd/Compressed) → CR2W
   → TweakXL (.yaml) + ArchiveXL (.xl/factory.csv) → .archive
 ```
 
-Detalhe completo, comandos e armadilhas: [`docs/PIPELINE.md`](docs/PIPELINE.md).
+Tudo em código (sem GUI), com verificação numérica em cada codec.
+Detalhe, comandos e armadilhas: [`docs/PIPELINE.md`](docs/PIPELINE.md).
 
 ## Limitações conhecidas
 
