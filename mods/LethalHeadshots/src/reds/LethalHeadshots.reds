@@ -86,9 +86,11 @@ public class LhAimTicker extends DelayCallback {
     ticker.Schedule();
 
     // Life proof: the ticker started (visible without aiming at anything).
+    // NOTE: the wording must NOT contain "QUE OTA" — that label is reserved
+    // for the head case only, so the startup proof is unmistakable.
     if DebugProbes() {
       FTLog("LethalHeadshots: ticker iniciado");
-      PushQueOtaMessage(player, "QUE OTA · ticker ativo");
+      PushQueOtaMessage(player, "TICKER ATIVO");
     };
   }
 
@@ -120,7 +122,7 @@ public class LhAimTicker extends DelayCallback {
     // work at the end of the tick throws at runtime.
     if DebugProbes() {
       if targetSeen && NotEquals(targetSeen, this.m_targetSeen) {
-        PushQueOtaMessage(this.m_player, "QUE OTA · alvo sob a mira");
+        PushQueOtaMessage(this.m_player, "ALVO SOB A MIRA");
       };
       this.m_targetSeen = targetSeen;
 
@@ -310,10 +312,12 @@ private final func LhCreateOverlayWidgets(root: wref<inkCompoundWidget>) -> Void
 // Aim geometry: is the crosshair over the target's head?
 // ---------------------------------------------------------------------------
 
-// Brute force and pose independent: the aim ray's hit point is compared with
-// the target's "Head" slot — the same slot the game's own AI aims at. Falls
-// back to a height heuristic when the target has no Head slot. `targetSeen`
-// reports that a living puppet is under the crosshair at all.
+// Uses the game's own CROSSHAIR APIs (GetTrackedTargetObject /
+// GetObjectClosestToCrosshair + GetDefaultCrosshairData), not the scanner's
+// GetLookAtObject — that one goes quiet during combat, which is why the label
+// only ever showed its startup message. The head test is pure geometry: the
+// perpendicular distance from the crosshair RAY to the target's "Head" slot
+// (the same slot the game's own AI aims at) — pose independent.
 func IsCrosshairOnHead(player: ref<PlayerPuppet>, out targetSeen: Bool) -> Bool {
   targetSeen = false;
 
@@ -322,14 +326,25 @@ func IsCrosshairOnHead(player: ref<PlayerPuppet>, out targetSeen: Bool) -> Bool 
     return false;
   };
 
-  // First the game's own strict query, then a permissive retry: some aim
-  // states fail the line-of-sight pass even over a clear target.
-  let lookAt: ref<GameObject> = targetingSystem.GetLookAtObject(player, true, true);
-  if !IsDefined(lookAt) {
-    lookAt = targetingSystem.GetLookAtObject(player, false, false);
+  // 1) The aim-assist tracked target; 2) the object closest to the crosshair;
+  // 3) the scanner look-at as a last resort.
+  let target: ref<ScriptedPuppet> = targetingSystem.GetTrackedTargetObject(player) as ScriptedPuppet;
+  if !IsDefined(target) {
+    let query: TargetSearchQuery;
+    query.testedSet = TargetingSet.Visible;
+    query.ignoreInstigator = true;
+    query.filterObjectByDistance = true;
+    query.maxDistance = 300.00;
+    let angleDistance: EulerAngles;
+    target = targetingSystem.GetObjectClosestToCrosshair(player, angleDistance, query) as ScriptedPuppet;
+  };
+  if !IsDefined(target) {
+    target = targetingSystem.GetLookAtObject(player, true, true) as ScriptedPuppet;
+  };
+  if !IsDefined(target) {
+    target = targetingSystem.GetLookAtObject(player, false, false) as ScriptedPuppet;
   };
 
-  let target: ref<ScriptedPuppet> = lookAt as ScriptedPuppet;
   if !IsDefined(target) || target.IsDead() || target.IsPlayer() {
     return false;
   };
@@ -340,15 +355,27 @@ func IsCrosshairOnHead(player: ref<PlayerPuppet>, out targetSeen: Bool) -> Bool 
     return false;
   };
 
-  let aimPoint: Vector4 = targetingSystem.GetLookAtPosition(player, true, true);
+  // The crosshair ray: origin + forward.
+  let rayPos: Vector4;
+  let rayFwd: Vector4;
+  targetingSystem.GetDefaultCrosshairData(player, rayPos, rayFwd);
+  let fwd: Vector4 = Vector4.Normalize(rayFwd);
+
   let headPos: Vector4;
   if AIActionHelper.GetTargetSlotPosition(target, n"Head", headPos) {
-    return Vector4.Distance(aimPoint, headPos) < 0.45;
+    let toHead: Vector4 = headPos - rayPos;
+    let along: Float = Vector4.Dot(toHead, fwd);
+    if along <= 0.50 || along > 300.00 {
+      return false;
+    };
+    // |toHead x fwd| is the perpendicular distance to the ray (fwd normalized).
+    let perp: Vector4 = Vector4.Cross(toHead, fwd);
+    return Vector4.LengthSquared(perp) < 0.25;
   };
 
   // No Head slot: assume a standing humanoid and use the height above the root.
   let rootPos: Vector4 = target.GetWorldPosition();
-  return aimPoint.Z - rootPos.Z > 1.20;
+  return rayPos.Z - rootPos.Z > 1.20;
 }
 
 // ---------------------------------------------------------------------------
