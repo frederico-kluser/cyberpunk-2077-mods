@@ -42,16 +42,40 @@ SETS = {
 }
 
 
+# the CS2 first-person clips carry the VIEW motion on the root/hand bones
+# (the whole gun swings on recoil). CP2077 gets gun motion from the HAND
+# animations — the rig root must stay at rest. Caught by render_anim_check
+# showing an exploded pose at frame 5.
+ROOT_BONES = ("barrel_plug", "barrel")
+
+
 def load_re_clip(path: str) -> dict:
-    """bone name -> (K,11) xformframes [pos.xyz rot.xyzw scale.xyz time]."""
+    """bone name -> (K,11) xformframes [pos.xyz rot.xyzw scale.xyz time].
+
+    Root/hand bones are pinned to their SKELETON REST (view motion stripped).
+    """
     out = {}
     with h5py.File(path, "r") as f:
         # real layout: /.re_asset_node/.re_animation_container/.re_animation/.re_anim_clip
         group = f["/.re_asset_node/.re_animation_container/.re_animation/.re_anim_clip"]
+        sk = f["/.re_asset_node/.re_asset_description_node/.re_skeleton"]
+        names = [b.decode() if isinstance(b, bytes) else str(b) for b in sk["bonenames"][:]]
+        rest = {}
+        for i, n in enumerate(names):
+            row = sk["bonexforms"][i]
+            rest[n] = [float(row[j]) for j in range(10)]
         for bone in group.keys():
             if bone not in JOINT_ORDER:
                 continue
-            out[bone] = group[bone]["xformframes"][:]
+            frames = group[bone]["xformframes"][:]
+            if bone in ROOT_BONES and bone in rest:
+                pinned = []
+                for rec in frames:
+                    vals = [float(rec[j]) for j in range(11)]
+                    pinned.append(tuple(rest[bone] + [vals[10]]))
+                out[bone] = pinned
+            else:
+                out[bone] = frames
     return out
 
 
