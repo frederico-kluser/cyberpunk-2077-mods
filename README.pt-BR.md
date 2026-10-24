@@ -17,7 +17,7 @@ validação e release.
 
 | Mod | Versão | O que faz |
 | --- | --- | --- |
-| [**Lethal Headshots**](mods/LethalHeadshots) | 1.0.1 | Todo headshot mata na hora — sem multiplicadores de dano e sem o teto de dano dos bosses. Civis, aliados e NPCs protegidos por missão são poupados por predefinição. |
+| [**Lethal Headshots**](mods/LethalHeadshots) | 1.0.1 | Todo headshot mata na hora — qualquer NPC, civis incluídos. Sem multiplicadores de dano e sem o teto dos bosses; só NPCs com god mode/protegidos por missão são poupados. |
 
 ## Requisitos
 
@@ -95,5 +95,6 @@ Não reporte problemas de segurança em público. Veja [SECURITY.md](SECURITY.md
 ## Licença
 
 MIT. Veja [LICENSE](LICENSE).
+
 
 

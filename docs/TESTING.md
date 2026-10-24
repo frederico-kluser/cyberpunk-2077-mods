@@ -55,8 +55,8 @@ Run these with a fresh save or a save where you can reload freely.
 | 1 | Shoot a hostile ganger in the head with a pistol | Dies on the first hit |
 | 2 | Shoot the same enemy in the chest | Normal damage, no instant kill |
 | 3 | Aim at an enemy's head without shooting (aim assist / projection) | Nothing happens |
-| 4 | Shoot a civilian in the head | Survives (with `SpareCivilians = true`) |
-| 5 | Shoot an ally / companion in the head | Survives (with `SpareAllies = true`) |
+| 4 | Shoot a civilian in the head | Dies (default) — survives only if `SpareCivilians = true` |
+| 5 | Shoot an ally / companion in the head | Dies (default) — survives only if `SpareAllies = true` |
 | 6 | Headshot a boss (e.g. a cyberpsycho) | Dies, unless the boss is in a protected phase |
 | 7 | Headshot a drone / mech / turret | Normal behaviour, no crash |
 | 8 | Throw a grenade at an enemy's head level | Explosion behaves normally |
@@ -76,3 +76,4 @@ When CDPR ships a new patch:
 2. Run `tools/validate.ps1 -DownloadTools`; fix any API break.
 3. Run the manual matrix above.
 4. Bump `mod.json` `gameVersion` and note the supported patch in the README.
+

@@ -42,8 +42,8 @@ restart the game (the scripts are compiled on startup).
 
 | Option | Default | Effect |
 | --- | --- | --- |
-| `SpareCivilians` | `true` | Civilians survive a headshot. Set to `false` to kill anyone. |
-| `SpareAllies` | `true` | Characters with a friendly attitude towards V survive. |
+| `SpareCivilians` | `false` | When `true`, civilians survive a headshot. Off by default: any headshot kills. |
+| `SpareAllies` | `false` | When `true`, characters with a friendly attitude towards V survive. Off by default. |
 | `SpareProtectedTargets` | `true` | God-mode / scripted-invulnerable / quest-protected NPCs survive. **Keep this on** unless you want to risk breaking quests. |
 
 ```redscript
@@ -75,6 +75,16 @@ Consequences:
   damage path.
 - **Drones, mechs, turrets, vehicles:** only if the game exposes a head hit shape
   for them; otherwise they take normal damage. Weakspots are a separate system.
+
+## Aim preview — the "QUE OTA" label
+
+While aiming, the mod previews the outcome: a red **QUE OTA** label appears
+above the crosshair whenever the crosshair is over a head that would die on the
+next shot. It is purely cosmetic — aiming never kills (the projection pipeline
+is guarded) — and the label mirrors the same guards the kill uses, including the
+config options above. The label is a plain `inkText` parented to the game's own
+crosshair container (no Cyber Engine Tweaks, no Codeware, no RED4ext) and is
+created lazily on first use.
 
 ## How it works (short version)
 
@@ -117,7 +127,7 @@ guards, is in [docs/ARCHITECTURE.md](../../docs/ARCHITECTURE.md).
 | Nothing happens | `r6\logs\redscript_rCURRENT.log` must end with a successful compile and list `LethalHeadshots`. |
 | Compile error in the log | You are probably on redscript < 0.5.32 or on a different game patch. |
 | Works on enemies, not on a specific boss | The boss is probably protected (god mode / quest flag). That is `SpareProtectedTargets`. |
-| Civilians die | `SpareCivilians` was set to `false`. |
+| Civilians survive a headshot | `SpareCivilians` is set to `true`; set it to `false` to kill everyone. |
 
 ## Development
 
@@ -128,4 +138,6 @@ pwsh -File tools/deploy.ps1 -Launch            # deploy and start the game
 
 See [docs/TESTING.md](../../docs/TESTING.md) for the full validation and manual
 test matrix.
+
+
 
