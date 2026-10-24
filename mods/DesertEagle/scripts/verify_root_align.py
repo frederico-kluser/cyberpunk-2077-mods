@@ -49,19 +49,35 @@ def main():
                     "isTrackConstant", "numTranslationsToCopy", "numTranslationsToEvalAlignedToSimd",
                     "quantizationBits", "numTracks")}
                 dec = sw.decode_simd(__import__("base64").b64decode(buf["inplaceCompressedBuffer"]["Bytes"]), hdr)
-                f0 = dec["frames"][0][0]
+                got_t = tuple(dec["frames"][0][0]["t"])
             else:
-                continue  # compressed clips pin the root as const keys; covered below
-            # expected root = A @ rest(barrel_plug) = A since rest is identity
+                # Compressed clips: the root is pinned as const keys (or raw
+                # keys at frame 0) — decode both and take bone 0's position
+                import anims_write as cw
+                counts = {
+                    "num_anim_keys_raw": buf.get("numAnimKeysRaw") or 0,
+                    "num_const_anim_keys": buf.get("numConstAnimKeys") or 0,
+                }
+                keys = cw.decode_buffer(__import__("base64").b64decode(buf["tempBuffer"]["Bytes"]),
+                                        counts, buf.get("duration", 1.0))
+                got_t = None
+                for k in keys["const"] + keys["raw"]:
+                    if k["bone"] == 0 and k["component"] == 0:
+                        got_t = tuple(k["value"])
+                        break
+                if got_t is None:
+                    print(f"[FAIL] {set_name}/{anim['name']['$value']:16s} no root key found")
+                    total += 1
+                    continue
+            # expected root = A @ rest(barrel_plug) = A translation
             exp_t = tuple(t)
-            got_t = tuple(f0["t"])
             err = max(abs(a - b) for a, b in zip(exp_t, got_t))
             total += 1
             good = err < 2e-3
             ok += good
             print(f"[{'OK' if good else 'FAIL'}] {set_name}/{anim['name']['$value']:16s} root t={tuple(round(x,4) for x in got_t)} err={err:.5f}")
 
-    print(f"ROOT_ALIGN_VERIFY_{'OK' if ok == total else 'FAIL'} ({ok}/{total} simd clips)")
+    print(f"ROOT_ALIGN_VERIFY_{'OK' if ok == total else 'FAIL'} ({ok}/{total} clips)")
     return 0 if ok == total else 1
 
 
