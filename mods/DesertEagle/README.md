@@ -21,8 +21,9 @@ ver [`src/blender/README.md`](src/blender/README.md).
 | **Retarget CS2 → ossos da Nue** (estágio novo do pipeline) | feito — 6/6 ossos renomeados, pesos 100% preservados; inclui `clip` → `mag_slot` (carregador) |
 | **Animações CS2** (50 actions: shoot/reload/draw/idle) | identificadas — 22 reais mapeadas para o CP2077 (ver [`src/blender/configs/desert_eagle_cs2.json`](src/blender/configs/desert_eagle_cs2.json)) |
 | 1.º build real (align→retarget→rig→lods→export) | feito — `PIPELINE_OK`, artefactos em [`assets/work/`](assets/work) |
-| Registos TweakXL/ArchiveXL + `.archive` final | templates prontos em [`src/tweakxl`](src/tweakxl) e [`src/archivexl`](src/archivexl) |
-| Injeção no jogo | **bloqueada por restrição do dono** — pasta do jogo verificada limpa de trilhas nossas; staging em [`tools/runtime/`](../../tools/runtime) |
+| Registos TweakXL/ArchiveXL + `.archive` final | **feito** — `scripts/pack_archive.ps1` → `assets/work/release/desert_eagle.archive` (6 entradas, unbundle 6/6 ✓) + loader `.xl` + TweakXL `.yaml` |
+| **`.mesh` da Desert Eagle** | **feito** — construído por código (`export_geometry.py` → `mesh_write.py` → CR2W), bbox 0,146×0,038×0,253 m verificada |
+| Injeção no jogo | **bloqueada por restrição do dono** — pacote pronto em `assets/work/release/`, nada vai para o jogo até autorização |
 
 ## Requisitos
 
