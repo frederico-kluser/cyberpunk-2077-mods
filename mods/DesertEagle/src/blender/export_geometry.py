@@ -19,16 +19,18 @@ import os
 import sys
 
 import bpy
-from mathutils import Matrix, Vector
+from mathutils import Matrix, Quaternion, Vector
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 sys.path.insert(0, os.path.join(HERE, "..", "..", "scripts"))
 
 import mesh_buffer as mb  # noqa: E402
+from de_pipeline.re_export import load_rig_json  # noqa: E402
 from de_pipeline.retarget import drop_objects, retarget_bones  # noqa: E402
 
 MODEL = os.path.join(HERE, "..", "..", "assets", "raw", "desert_eagle_cs2.glb")
+RIG_JSON = os.path.join(HERE, "..", "..", "assets", "_inventory", "nue_rig.json")
 
 BONE_MAP = {
     "GLTF_created_0_rootJoint": "barrel_plug",
@@ -71,6 +73,63 @@ def evaluated_triangles(obj):
     return verts, normals, uvs, tris
 
 
+def rest_delta_matrices(rig_json_path):
+    """Per-bone 4x4 delta: nue_arm_rest @ cs2_arm_rest^-1.
+
+    The retarget only RENAMES bones — the vertices stay around the CS2 rest
+    while the game rig (and the animations) live at the Nue rest in game
+    space. Without this transform the mesh and the rig disagree by the
+    CS2->Nue orientation (verified by scripts/verify_skin_mapping.py and
+    assets/_inventory/check_spaces.py). The SAME rest-to-rest mapping the
+    animation export applies is applied to the geometry here.
+    """
+    arm = next((o for o in bpy.data.objects if o.type == "ARMATURE"), None)
+    if arm is None:
+        raise RuntimeError("no armature in scene")
+
+    def local_of(pb):
+        if pb.parent is None:
+            return pb.bone.matrix_local.copy()
+        return pb.parent.bone.matrix_local.inverted() @ pb.bone.matrix_local
+
+    # vertex groups are renamed to Nue names but the armature bones may keep
+    # the CS2 names — map both through BONE_MAP
+    cs2_local = {BONE_MAP.get(pb.name, pb.name): local_of(pb) for pb in arm.pose.bones}
+
+    nue_local = {}
+    for b in load_rig_json(rig_json_path):
+        x, y, z, w = b["quat"]
+        rot = Quaternion((w, x, y, z)).to_matrix().to_4x4()
+        nue_local[b["name"]] = Matrix.Translation(Vector(b["pos"])) @ rot
+
+    def chain(local, order, parents):
+        out = {}
+        for i, name in enumerate(order):
+            if name not in local:
+                continue  # the CS2 rig has only the 6 mapped bones
+            p = parents[i]
+            while p >= 0 and order[p] not in local:
+                p = parents[p]
+            out[name] = (out[order[p]] @ local[name] if p >= 0 else local[name].copy())
+        return out
+
+    # RIG_ORDER/parents mirror the .rig: barrel_plug root, barrel child, ...
+    parents = [-1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 5]
+    nue_arm = chain(nue_local, RIG_ORDER, parents)
+    cs2_arm = chain(cs2_local, RIG_ORDER, parents)
+    # The CS2 GLB splits units (object scale 0.0254 + inch bone offsets); the
+    # composed world matrices end up with scale 0.0254 while translations are
+    # already meters. Normalise the rotation so the per-bone delta is rigid
+    # (scale 1 x 1) instead of 39x — caught by the pistol-sized bbox check.
+    cs2_fixed = {}
+    for n, m in cs2_arm.items():
+        mw = arm.matrix_world @ m
+        rot = mw.to_3x3().normalized().to_4x4()
+        rot.translation = mw.to_translation()
+        cs2_fixed[n] = rot
+    cs2_arm = cs2_fixed
+    shared = [n for n in RIG_ORDER if n in nue_arm and n in cs2_arm]
+    return {name: nue_arm[name] @ cs2_arm[name].inverted() for name in shared}
 def skin_of(obj, nverts):
     """(indices[4], weights[4]) per vertex from the (renamed) vertex groups."""
     out_i = [[0, 0, 0, 0] for _ in range(nverts)]
@@ -113,21 +172,17 @@ def main() -> int:
     meshes = [o for o in bpy.data.objects if o.type == "MESH"]
     retarget_bones(meshes, BONE_MAP)
 
-    # fit: uniform diagonal scale + bbox_min anchor (same rule as the pipeline)
+    # rest-to-rest transform: move vertices from the CS2 rest onto the Nue
+    # game-space rest (replaces the old blind "fit" that left the mesh and
+    # the rig in different orientations)
+    deltas = rest_delta_matrices(RIG_JSON)
     all_pts = []
     data = {}
     for obj in meshes:
         verts, normals, uvs, tris = evaluated_triangles(obj)
         data[obj.name] = (verts, normals, uvs, tris)
         all_pts.extend(verts)
-    smin = Vector((min(p[i] for p in all_pts) for i in range(3)))
-    smax = Vector((max(p[i] for p in all_pts) for i in range(3)))
-    sdiag = (smax - smin).length
-    tdiag = Vector((tmax[0] - tmin[0], tmax[1] - tmin[1], tmax[2] - tmin[2])).length
-    scale = tdiag / sdiag if sdiag > 1e-9 else 1.0
-    target_min = Vector((tmin[0], tmin[1], tmin[2]))
-    delta = target_min - smin * scale
-    print(f"GEOM fit scale={scale:.6f} delta={tuple(round(v,4) for v in delta)}")
+    print(f"GEOM source bbox span={max(max(p[i] for p in all_pts) - min(p[i] for p in all_pts) for i in range(3)):.4f} m")
 
     # ONE material chunk (vanilla chunks are per-material parts, NOT LODs —
     # a duplicated chunk makes the gun render twice over itself; caught by
@@ -140,11 +195,22 @@ def main() -> int:
         obj = bpy.data.objects[name]
         si, sw = skin_of(obj, len(verts))
         for k, v in enumerate(verts):
-            p = v * scale + delta
+            # skin-blended rest-to-rest transform (game space from here on)
+            p = Vector((0.0, 0.0, 0.0))
+            nrm = Vector((0.0, 0.0, 0.0))
+            for j in range(4):
+                w = sw[k][j]
+                if w <= 0:
+                    continue
+                m = deltas[RIG_ORDER[si[k][j]]]
+                p += w * (m @ v)
+                nrm += w * (m.to_3x3() @ ns[k])
+            if nrm.length < 1e-9:
+                nrm = Vector((0, 0, 1))
+            nrm.normalize()
             positions.append([round(p.x, 7), round(p.y, 7), round(p.z, 7)])
-            n = ns[k]
-            normals.append([round(n.x, 5), round(n.y, 5), round(n.z, 5)])
-            t = n.cross(Vector((0, 0, 1)))
+            normals.append([round(nrm.x, 5), round(nrm.y, 5), round(nrm.z, 5)])
+            t = nrm.cross(Vector((0, 0, 1)))
             if t.length < 1e-6:
                 t = Vector((1, 0, 0))
             t.normalize()
