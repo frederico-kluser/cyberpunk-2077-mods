@@ -90,6 +90,57 @@ protected cb func OnLhTick(evt: ref<LhTickEvent>) -> Bool {
 }
 
 // ---------------------------------------------------------------------------
+// The HEARTBEAT — a self-re-arming ink animation (the minimap's own pulse
+// pattern). Animation callbacks bind by NAME, so they reach methods added at
+// runtime — unlike dispatched events, which never reached OnLhTick (the logs
+// proved the label only updated on crosshair state changes). Each ~0.12 s
+// animation finishes, polls, and starts the next one.
+// ---------------------------------------------------------------------------
+
+@addField(gameuiCrosshairBaseGameController)
+public let m_lhAnim: ref<inkAnimProxy>;
+
+@addMethod(gameuiCrosshairBaseGameController)
+public final func LhStartHeartbeat() -> Void {
+  if IsDefined(this.m_lhAnim) {
+    return;
+  };
+  this.LhPlayHeartbeat();
+}
+
+@addMethod(gameuiCrosshairBaseGameController)
+private final func LhPlayHeartbeat() -> Void {
+  let root: wref<inkWidget> = this.GetRootWidget();
+  if !IsDefined(root) {
+    return;
+  };
+  let def: ref<inkAnimDef> = new inkAnimDef();
+  let beat: ref<inkAnimTransparency> = new inkAnimTransparency();
+  beat.SetStartTransparency(1.00);
+  beat.SetEndTransparency(1.00);
+  beat.SetDuration(0.12);
+  def.AddInterpolator(beat);
+  let proxy: ref<inkAnimProxy> = root.PlayAnimation(def);
+  if IsDefined(proxy) {
+    proxy.RegisterToCallback(inkanimEventType.OnFinish, this, n"OnLhHeartbeat");
+    this.m_lhAnim = proxy;
+  };
+}
+
+@addMethod(gameuiCrosshairBaseGameController)
+protected cb func OnLhHeartbeat(proxy: ref<inkAnimProxy>) -> Bool {
+  if IsDefined(this.m_lhAnim) {
+    this.m_lhAnim.UnregisterFromCallback(inkanimEventType.OnFinish, this, n"OnLhHeartbeat");
+    this.m_lhAnim = null;
+  };
+  if IsDefined(this.m_lhPlayer) {
+    this.LhPoll(this.m_lhPlayer);
+  };
+  this.LhPlayHeartbeat();
+  return true;
+}
+
+// ---------------------------------------------------------------------------
 // Drivers — only callbacks proven to fire in game
 // ---------------------------------------------------------------------------
 
@@ -105,6 +156,7 @@ protected func OnCrosshairStateChange(oldState: gamePSMCrosshairStates, newState
   };
   if IsDefined(this.m_lhPlayer) {
     LhStartTicker(this.m_lhPlayer);
+    this.LhStartHeartbeat();
     this.LhPoll(this.m_lhPlayer);
   };
 }
@@ -117,6 +169,7 @@ protected cb func OnPlayerAttach(playerPuppet: ref<GameObject>) -> Bool {
   if IsDefined(this.m_lhPlayer) {
     this.m_lhPlayer.m_lhCrosshairBase = this;
     LhStartTicker(this.m_lhPlayer);
+    this.LhStartHeartbeat();
     this.LhPoll(this.m_lhPlayer);
   };
   return ret;
