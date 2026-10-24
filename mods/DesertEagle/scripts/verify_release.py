@@ -96,7 +96,7 @@ def main():
     json_dir = os.path.join(out, "_json")
     os.makedirs(json_dir, exist_ok=True)
     for entry in EXPECTED:
-        if entry.endswith((".app", ".ent", ".mesh", "weapons.csv")):
+        if entry.endswith((".app", ".ent", ".mesh", "weapons.csv", "en-us.json", "pt-br.json")):
             wk("convert", "serialize", os.path.join(out, entry.replace("\\", os.sep)), "-o", json_dir, "-v", "Minimal")
             base = os.path.basename(entry) + ".json"
             check(os.path.isfile(os.path.join(json_dir, base)), f"re-serializes {entry}")
@@ -162,6 +162,40 @@ def main():
     anim_refs_walk(rc)
     ours = [v for v in anim_vals if v in want_keys]
     check(len(ours) >= 2, f"app animation sets point at our clips (found {len(ours)} refs)")
+
+    # localization CONTENT: the item name must exist in both shipped locales
+    def find_entries(node):
+        if isinstance(node, dict):
+            if "entries" in node and isinstance(node["entries"], list):
+                return node["entries"]
+            for v in node.values():
+                r = find_entries(v)
+                if r is not None:
+                    return r
+        elif isinstance(node, list):
+            for v in node:
+                r = find_entries(v)
+                if r is not None:
+                    return r
+        return None
+
+    for locale in ("en-us", "pt-br"):
+        loc_path = os.path.join(json_dir, f"{locale}.json.json")
+        if not os.path.isfile(loc_path):
+            check(False, f"localization {locale} serialized back")
+            continue
+        loc = json.load(open(loc_path, encoding="utf-8"))
+
+        def fld(v):
+            return v.get("$value") if isinstance(v, dict) else v
+
+        entries = find_entries(loc) or []
+        named = [
+            e for e in entries
+            if fld(e.get("secondaryKey")) == "DesertEagle-Name"
+            and fld(e.get("femaleVariant"))
+        ]
+        check(bool(named), f"localization {locale} carries the DesertEagle-Name entry")
 
     # compiledData is a stale cooked cache — provably inert while
     # cookedAppearanceData is empty (the engine renders from the components)
