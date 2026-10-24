@@ -23,3 +23,17 @@ assets/glb_staging/
 *.effect
 *.particle
 !docs/**/*.png
+
+# Bytecode Python — nunca versionar.
+__pycache__/
+*.pyc
+
+# Dumps serializados grandes de dados do jogo (regeneráveis com
+# `wolvenkit-cli convert serialize`); ficam só os resumos pequenos
+# (nue_bones.txt, nue_rig.json, provenance.txt).
+assets/_inventory/rig_json/
+
+# Material de trabalho/entregável da animação (clips .mp4, stills .png
+# grandes, .gif) — fica na worktree, nunca versionado. Colocado DEPOIS de
+# `!docs/**/*.png` para garantir que a regra vence a re-inclusão.
+docs/renders/anim/

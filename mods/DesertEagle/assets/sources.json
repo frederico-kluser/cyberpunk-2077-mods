@@ -51,5 +51,14 @@
       "status": "fallback sem atribuição"
     }
   ],
-  "selected": null
+  "selected": {
+    "id": "poly-pizza-rigged-desert-eagle",
+    "title": "Rigged Desert Eagle",
+    "author": "PuKkBuMXDD (Артур Мигранов)",
+    "source": "https://poly.pizza/m/e9k4dwOzCX",
+    "license": "CC-BY 3.0",
+    "format": "glb",
+    "local_path": "mods/DesertEagle/assets/raw/desert_eagle_poly.glb",
+    "attribution": "\"Rigged Desert Eagle\" by PuKkBuMXDD (Артур Мигранов) — https://poly.pizza/m/e9k4dwOzCX — licensed under CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/)."
+  }
 }

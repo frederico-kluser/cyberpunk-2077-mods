@@ -13,6 +13,12 @@ ativo do jogo como molde → editar no Blender → injetar de volta**. A Tsunami
 (`Items.Preset_Nue_Default`) é o molde: herdam-se o esqueleto (`.rig`), o
 conjunto de animações (`.anims`) e o grafo de estados (`.animgraph`).
 
+> **Restrição do dono (em vigor):** *por enquanto nada é injetado no jogo.* Todo
+> o pipeline — extração (read-only), Blender, montagem do `.archive` e pacotes —
+> corre e guarda **na worktree**, de começo ao fim. Os passos §5–§7 (WolvenKit
+> → `archive\pc\mod`, TweakXL em `r6\tweaks`, teste em jogo) ficam documentados
+> mas **não executados** até autorização explícita.
+
 ## 1. Ferramentas
 
 | Ferramenta | Papel |

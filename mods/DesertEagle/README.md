@@ -12,13 +12,15 @@ ver [`src/blender/README.md`](src/blender/README.md).
 
 | Etapa | Estado |
 | --- | --- |
-| Worktree + estrutura do projeto | feito |
+| Worktree + estrutura do projeto | feito (PR [#13](https://github.com/frederico-kluser/cyberpunk-2077-mods/pull/13) fundido) |
 | Pipeline Blender (import/align/rig/lods/export) | feito, teste `SMOKE_TEST_OK` |
 | Toolchain local (Blender 5.2.3 LTS + 4 add-ons + WolvenKit 9.1.0) | feito — ver [`docs/TOOLCHAIN.md`](docs/TOOLCHAIN.md) |
-| Frameworks de runtime (RED4ext + ArchiveXL 1.27.5 + TweakXL 1.11.5) | ArchiveXL/TweakXL instalados; RED4ext em instalação |
-| Extração do molde Tsunami Nue (`.mesh`/`.rig`/`.anims`) | em curso |
-| Modelo 3D da Desert Eagle (licença permissiva) | candidatos registados em [`assets/sources.json`](assets/sources.json) |
+| Extração do molde Tsunami Nue (rig/anims/mesh/app/ent + GLB) | feito — 100 ficheiros + template GLB em [`assets/extracted/`](assets/extracted) |
+| Ossos reais do `.rig` da Nue (11 ossos) | feito — [`assets/_inventory/nue_bones.txt`](assets/_inventory/nue_bones.txt), mapeados no config |
+| Modelo 3D da Desert Eagle | feito — "Rigged Desert Eagle" (Poly Pizza, CC-BY 3.0, atribuição em [`assets/sources.json`](assets/sources.json)) |
+| 1.º build real (align→rig→lods→export) | feito — `PIPELINE_OK`, artefactos em [`assets/work/`](assets/work) |
 | Registos TweakXL/ArchiveXL + `.archive` final | templates prontos em [`src/tweakxl`](src/tweakxl) e [`src/archivexl`](src/archivexl) |
+| Injeção no jogo | **bloqueada por restrição do dono** — pasta do jogo verificada limpa de trilhas nossas; staging em [`tools/runtime/`](../../tools/runtime) |
 
 ## Requisitos
 
@@ -30,7 +32,12 @@ ver [`src/blender/README.md`](src/blender/README.md).
 
 ## Instalação
 
-1. Instale redscript, ArchiveXL e TweakXL na raiz do jogo.
+> **Restrição do dono (em vigor):** nada é injetado no jogo por enquanto — todo o
+> trabalho, do modelo ao `.archive`, vive **na worktree** (`mods/DesertEagle/`,
+> com os artefactos em `assets/work/`). A instalação no jogo só acontece quando o
+> dono autorizar.
+
+1. Instale redscript, ArchiveXL e TweakXL na raiz do jogo. *(quando autorizado)*
 2. Extraia o zip do release para a raiz do jogo, fundindo pastas:
    - `r6\scripts\DesertEagle\` — helper Redscript de teste
    - `r6\tweaks\desert_eagle.yaml` — registo do item (TweakXL)
@@ -87,5 +94,11 @@ Detalhe completo, comandos e armadilhas: [`docs/PIPELINE.md`](docs/PIPELINE.md).
 
 ## Licença
 
-MIT — ver [LICENSE](../../LICENSE). O modelo 3D de origem tem a sua própria
-licença, registada em `docs/TOOLCHAIN.md`.
+MIT — ver [LICENSE](../../LICENSE).
+
+O modelo 3D de origem é de terceiros e mantém a sua própria licença
+(**CC-BY 3.0**, com atribuição obrigatória):
+
+> "Rigged Desert Eagle" by PuKkBuMXDD (Артур Мигранов) —
+> [poly.pizza/m/e9k4dwOzCX](https://poly.pizza/m/e9k4dwOzCX) — licensed under
+> [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/).
