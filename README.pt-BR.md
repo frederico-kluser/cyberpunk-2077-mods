@@ -51,6 +51,16 @@ jogo arrancar. Adiciona isto a **Steam → Cyberpunk 2077 → Propriedades → G
 "C:\Users\kluse\Tools\cet-gate.bat" %command% -modded
 ```
 
+> **Isto é um valor para o campo da Steam, não um comando de terminal.** O
+> `%command%` é um marcador que só a Steam substitui (pelo comando real do
+> jogo) — colar isto no PowerShell falha (`%` é operador lá). Para arrancar do
+> mesmo modo a partir do terminal, substitui `%command%` pelo executável do
+> jogo:
+>
+> ```powershell
+> & "C:\Users\kluse\Tools\cet-gate.bat" "C:\Program Files (x86)\Steam\steamapps\common\Cyberpunk 2077\bin\x64\Cyberpunk2077.exe" -modded
+> ```
+
 | Arranque | Resultado |
 | --- | --- |
 | **com** `-modded` | CET ligado — consola + logs do LogSentry |

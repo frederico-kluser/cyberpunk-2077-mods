@@ -52,6 +52,15 @@ Launch options**:
 "C:\Users\kluse\Tools\cet-gate.bat" %command% -modded
 ```
 
+> **This is a Steam field value, not a terminal command.** `%command%` is a
+> placeholder that only Steam substitutes (with the real game command) — pasting
+> it into PowerShell fails (`%` is an operator there). To launch the same way
+> from a terminal, replace `%command%` with the game exe:
+>
+> ```powershell
+> & "C:\Users\kluse\Tools\cet-gate.bat" "C:\Program Files (x86)\Steam\steamapps\common\Cyberpunk 2077\bin\x64\Cyberpunk2077.exe" -modded
+> ```
+
 | Launch | Result |
 | --- | --- |
 | **with** `-modded` | CET enabled — console + LogSentry logging |
