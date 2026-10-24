@@ -17,7 +17,7 @@
 [CmdletBinding()]
 param(
   [string]$BlenderExe = 'C:\Users\kluse\Tools\Blender\5.2\blender.exe',
-  [string]$Config = 'src\blender\configs\desert_eagle.json',
+  [string]$Config = 'src\blender\configs\desert_eagle_cs2.json',
   [string]$Model,
   [string[]]$Stages = @('all')
 )

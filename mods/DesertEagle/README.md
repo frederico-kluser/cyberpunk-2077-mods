@@ -17,8 +17,10 @@ ver [`src/blender/README.md`](src/blender/README.md).
 | Toolchain local (Blender 5.2.3 LTS + 4 add-ons + WolvenKit 9.1.0) | feito — ver [`docs/TOOLCHAIN.md`](docs/TOOLCHAIN.md) |
 | Extração do molde Tsunami Nue (rig/anims/mesh/app/ent + GLB) | feito — 100 ficheiros + template GLB em [`assets/extracted/`](assets/extracted) |
 | Ossos reais do `.rig` da Nue (11 ossos) | feito — [`assets/_inventory/nue_bones.txt`](assets/_inventory/nue_bones.txt), mapeados no config |
-| Modelo 3D da Desert Eagle | feito — "Rigged Desert Eagle" (Poly Pizza, CC-BY 3.0, atribuição em [`assets/sources.json`](assets/sources.json)) |
-| 1.º build real (align→rig→lods→export) | feito — `PIPELINE_OK`, artefactos em [`assets/work/`](assets/work) |
+| **Modelo CS2 Desert Eagle** (escolha do dono) | feito — `desert_eagle_cs2.glb` (44 MB, 15k vértices, texturizado) |
+| **Retarget CS2 → ossos da Nue** (estágio novo do pipeline) | feito — 6/6 ossos renomeados, pesos 100% preservados; inclui `clip` → `mag_slot` (carregador) |
+| **Animações CS2** (50 actions: shoot/reload/draw/idle) | identificadas — 22 reais mapeadas para o CP2077 (ver [`src/blender/configs/desert_eagle_cs2.json`](src/blender/configs/desert_eagle_cs2.json)) |
+| 1.º build real (align→retarget→rig→lods→export) | feito — `PIPELINE_OK`, artefactos em [`assets/work/`](assets/work) |
 | Registos TweakXL/ArchiveXL + `.archive` final | templates prontos em [`src/tweakxl`](src/tweakxl) e [`src/archivexl`](src/archivexl) |
 | Injeção no jogo | **bloqueada por restrição do dono** — pasta do jogo verificada limpa de trilhas nossas; staging em [`tools/runtime/`](../../tools/runtime) |
 
@@ -96,8 +98,13 @@ Detalhe completo, comandos e armadilhas: [`docs/PIPELINE.md`](docs/PIPELINE.md).
 
 MIT — ver [LICENSE](../../LICENSE).
 
-O modelo 3D de origem é de terceiros e mantém a sua própria licença
-(**CC-BY 3.0**, com atribuição obrigatória):
+**Atenção ao modelo 3D em uso:** o modelo ativo (`assets/raw/desert_eagle_cs2.glb`)
+é um asset de terceiros derivado do Counter-Strike 2 (Valve), fornecido pelo
+dono do projeto para desenvolvimento — **não distribuir publicamente** sem
+resolver a questão de licença (ver [`assets/sources.json`](assets/sources.json)).
+
+O modelo de referência anterior mantém-se no projeto para renders de estúdio,
+com atribuição CC-BY 3.0:
 
 > "Rigged Desert Eagle" by PuKkBuMXDD (Артур Мигранов) —
 > [poly.pizza/m/e9k4dwOzCX](https://poly.pizza/m/e9k4dwOzCX) — licensed under

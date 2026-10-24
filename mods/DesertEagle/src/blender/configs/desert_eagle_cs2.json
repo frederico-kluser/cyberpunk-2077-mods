@@ -1,0 +1,75 @@
+{
+  "project_root": "C:/Users/kluse/Projects/cyberpunk-2077-desert-eagle/mods/DesertEagle",
+  "source_model": "assets/raw/desert_eagle_cs2.glb",
+  "base_template": "assets/extracted/glb/w_handgun_nue.glb",
+  "out_dir": "assets/work",
+  "units_per_meter": 1.0,
+  "notes": [
+    "MODELO (NOVO): 'pistol__desert_eagle_weapon_model_cs2.glb' fornecido pelo DONO (Downloads) - CS2/Source2 weapon_pist_deagle.vmdl_c via Sketchfab. 44 MB, 15.051 verts, 1 material (weapon_pist_deagle).",
+    "VEM PRÉ-SKINNADO com 6 ossos: GLTF_created_0_rootJoint, weapon_hand_r_4, v_weapon_deagle_slide_0, v_weapon_deagle_trigger_1, v_weapon_deagle_clip_2, v_weapon_deagle_hammer_3.",
+    "Inclui 50 ANIMAÇÕES: firstperson_shoot1/2/3 (+additive), firstperson_reload, firstperson_draw, firstperson_idle, sh_pstl_deploy/catch/firing/stand_reload, holstered, inventory_*, lookat, etc. - estas são as animações a calibrar para o CP2077.",
+    "RETARGET: os ossos CS2 renomeiam-se para os ossos reais do .rig da Nue (pesos preservados a 100%, sem reamostragem). Ver retarget.bone_map.",
+    "OOSso weapon_hand_r_4 (raiz da arma/mão) -> barrel (corpo); GLTF_created_0_rootJoint -> barrel_plug (raiz do rig).",
+    "Animações *_awp* são lixo de outro modelo no ficheiro - removidas pelo prune_actions.",
+    "NAO injetar no jogo: todos os artefactos ficam em assets/work (restricao do dono)."
+  ],
+  "align": {
+    "match_bbox": true,
+    "scale_mode": "diagonal",
+    "anchor_source": "bbox_min",
+    "anchor_template": "bbox_min"
+  },
+  "retarget": {
+    "armature": "GLTF_created_0",
+    "bone_map": {
+      "GLTF_created_0_rootJoint": "barrel_plug",
+      "weapon_hand_r_4": "barrel",
+      "v_weapon_deagle_slide_0": "slide",
+      "v_weapon_deagle_trigger_1": "weapon_trigger",
+      "v_weapon_deagle_clip_2": "mag_slot",
+      "v_weapon_deagle_hammer_3": "hammer"
+    },
+    "drop_objects": ["Icosphere"],
+    "keep_action_prefixes": [
+      "firstperson_shoot",
+      "firstperson_reload",
+      "firstperson_draw",
+      "firstperson_idle",
+      "sh_pstl_",
+      "dropped",
+      "holstered",
+      "inventory_",
+      "tools_preview"
+    ],
+    "drop_action_substrings": ["awp"]
+  },
+  "rig": {
+    "armature": "GLTF_created_0",
+    "max_influences": 8,
+    "weights": 1.0,
+    "default_bone": "barrel",
+    "bones": [
+      "barrel_plug",
+      "barrel",
+      "muzzle_slot",
+      "fx_muzzle",
+      "weapon_trigger",
+      "slide",
+      "hammer",
+      "slider_down",
+      "mag_slot",
+      "scope_slot",
+      "pos_ironsight"
+    ],
+    "vertex_groups": {}
+  },
+  "lods": {
+    "levels": [0, 1],
+    "naming": "{name}_LOD{level}"
+  },
+  "export": {
+    "filename": "w_handgun_desert_eagle.glb",
+    "with_materials": true,
+    "with_rig": true
+  }
+}
