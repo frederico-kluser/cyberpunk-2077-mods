@@ -176,12 +176,51 @@ def main() -> int:
     # game-space rest (replaces the old blind "fit" that left the mesh and
     # the rig in different orientations)
     deltas = rest_delta_matrices(RIG_JSON)
+
+    # The whole coherent system (body + parts) sits at the CS2 grip angle.
+    # The correct knob is the ANIMATIONS' root local (see re_to_anims): one
+    # rotation A applied there rotates the entire gun around the rig root.
+    # Compute A here (24 axis-aligned rotations, best vanilla-bbox match over
+    # ALL vertices) and export it for the animation writer.
+    import itertools
+    import numpy as np
+
+    vanilla_min = np.array(tmin, dtype=np.float64)
+    vanilla_max = np.array(tmax, dtype=np.float64)
+
     all_pts = []
     data = {}
     for obj in meshes:
         verts, normals, uvs, tris = evaluated_triangles(obj)
         data[obj.name] = (verts, normals, uvs, tris)
-        all_pts.extend(verts)
+        si, sw = skin_of(obj, len(verts))
+        for k, v in enumerate(verts):
+            m = deltas[RIG_ORDER[si[k][0]]]
+            p = m @ v
+            all_pts.append((p.x, p.y, p.z))
+    body = np.array(all_pts, dtype=np.float64)
+
+    best = None
+    for perm in itertools.permutations(range(3)):
+        for signs in ((1, 1, 1), (1, -1, -1), (-1, 1, -1), (-1, -1, 1)):
+            cols = []
+            for axis, s in zip(perm, signs):
+                col = [0.0, 0.0, 0.0]
+                col[axis] = float(s)
+                cols.append(col)
+            R = np.array(cols).T
+            rot = body @ R.T
+            t = vanilla_min - rot.min(axis=0)
+            placed = rot + t
+            sc = float(np.linalg.norm(placed.max(axis=0) - vanilla_max) +
+                       np.linalg.norm(placed.min(axis=0) - vanilla_min))
+            if best is None or sc < best[0]:
+                best = (sc, R, t)
+    score, R, t = best
+    print(f"GEOM grip-align score={score:.4f} R={R.tolist()} t={np.round(t,4).tolist()}")
+    align_out = os.path.join(os.path.dirname(os.path.abspath(out_json)), "de_align.json")
+    json.dump({"R": R.tolist(), "t": [float(x) for x in t]}, open(align_out, "w"))
+    print(f"GEOM_ALIGN {align_out}")
     print(f"GEOM source bbox span={max(max(p[i] for p in all_pts) - min(p[i] for p in all_pts) for i in range(3)):.4f} m")
 
     # ONE material chunk (vanilla chunks are per-material parts, NOT LODs —

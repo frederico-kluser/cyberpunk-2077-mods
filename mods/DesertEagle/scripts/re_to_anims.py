@@ -64,6 +64,67 @@ def load_re_clip(path: str) -> dict:
         for i, n in enumerate(names):
             row = sk["bonexforms"][i]
             rest[n] = [float(row[j]) for j in range(10)]
+
+        # grip alignment: the whole coherent system sits at the CS2 grip
+        # angle; the correct knob is the ROOT local (rotation A applied here
+        # rotates body AND parts around the rig root). A is computed by
+        # export_geometry (de_align.json) against the vanilla bbox.
+        A = None
+        align_path = os.path.join(os.path.dirname(os.path.abspath(path)), "..", "..", "de_align.json")
+        if os.path.exists(align_path):
+            ad = json.load(open(align_path, encoding="utf-8"))
+            A = (ad["R"], ad["t"])
+            print(f"ANIMS_GRIP_ALIGN {align_path}")
+
+        def quat_to_mat(q):
+            x, y, z, w = q
+            n = (x * x + y * y + z * z + w * w) ** 0.5 or 1.0
+            x, y, z, w = x / n, y / n, z / n, w / n
+            return [
+                [1 - 2 * (y * y + z * z), 2 * (x * y - z * w), 2 * (x * z + y * w)],
+                [2 * (x * y + z * w), 1 - 2 * (x * x + z * z), 2 * (y * z - x * w)],
+                [2 * (x * z - y * w), 2 * (y * z + x * w), 1 - 2 * (x * x + y * y)],
+            ]
+
+        def mat_to_quat(m):
+            tr = m[0][0] + m[1][1] + m[2][2]
+            if tr > 0:
+                s = (tr + 1.0) ** 0.5 * 2
+                w = 0.25 * s
+                x = (m[2][1] - m[1][2]) / s
+                y = (m[0][2] - m[2][0]) / s
+                z = (m[1][0] - m[0][1]) / s
+            elif m[0][0] > m[1][1] and m[0][0] > m[2][2]:
+                s = (1.0 + m[0][0] - m[1][1] - m[2][2]) ** 0.5 * 2
+                w = (m[2][1] - m[1][2]) / s
+                x = 0.25 * s
+                y = (m[0][1] + m[1][0]) / s
+                z = (m[0][2] + m[2][0]) / s
+            elif m[1][1] > m[2][2]:
+                s = (1.0 + m[1][1] - m[0][0] - m[2][2]) ** 0.5 * 2
+                w = (m[0][2] - m[2][0]) / s
+                x = (m[0][1] + m[1][0]) / s
+                y = 0.25 * s
+                z = (m[1][2] + m[2][1]) / s
+            else:
+                s = (1.0 + m[2][2] - m[0][0] - m[1][1]) ** 0.5 * 2
+                w = (m[1][0] - m[0][1]) / s
+                x = (m[0][2] + m[2][0]) / s
+                y = (m[1][2] + m[2][1]) / s
+                z = 0.25 * s
+            return (x, y, z, w)
+
+        def rest_row(bone):
+            vals = rest[bone]
+            if A is not None and bone == "barrel_plug":
+                Rm, tv = A
+                Rq = quat_to_mat((vals[3], vals[4], vals[5], vals[6]))
+                R = [[sum(Rm[i][k] * Rq[k][j] for k in range(3)) for j in range(3)] for i in range(3)]
+                t = [sum(Rm[i][k] * vals[k] for k in range(3)) + tv[i] for i in range(3)]
+                q = mat_to_quat(R)
+                return [t[0], t[1], t[2], q[0], q[1], q[2], q[3], 1.0, 1.0, 1.0]
+            return vals
+
         for bone in group.keys():
             if bone not in JOINT_ORDER:
                 continue
@@ -72,7 +133,7 @@ def load_re_clip(path: str) -> dict:
                 pinned = []
                 for rec in frames:
                     vals = [float(rec[j]) for j in range(11)]
-                    pinned.append(tuple(rest[bone] + [vals[10]]))
+                    pinned.append(tuple(rest_row(bone) + [vals[10]]))
                 out[bone] = pinned
             else:
                 out[bone] = frames
