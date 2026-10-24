@@ -26,10 +26,10 @@ public func SpareAllies() -> Bool {
 
 /*
  * Targets protected by the game (god mode, scripted invulnerability, quest
- * NPCs that must not die) survive a headshot. This is the only exception left
- * on purpose: one-shotting a quest-critical NPC can break a playthrough.
- * Set to false only if you accept that risk.
+ * NPCs that must not die) also take the headshot kill.
+ * Default is false: no exceptions, every headshot kills. WARNING: one-shotting
+ * a quest-critical NPC can break a playthrough — set to true to spare them.
  */
 public func SpareProtectedTargets() -> Bool {
-  return true;
+  return false;
 }
