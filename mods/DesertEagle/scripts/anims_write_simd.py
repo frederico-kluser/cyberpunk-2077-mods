@@ -238,6 +238,28 @@ def encode_simd(frames_data: list, duration: float, quantization_bits: int = 12)
     }
 
 
+def _next_buffer_id(anims_doc: dict) -> int:
+    """Pick a BufferId not used by any inplace/temp/deferred buffer in the file."""
+    used = set()
+
+    def visit(node):
+        if isinstance(node, dict):
+            for k, v in node.items():
+                if k in ("inplaceCompressedBuffer", "tempBuffer", "defferedBuffer",
+                         "fallbackAnimDataBuffer") and isinstance(v, dict):
+                    used.add(str(v.get("BufferId")))
+                visit(v)
+        elif isinstance(node, list):
+            for v in node:
+                visit(v)
+
+    visit(anims_doc["Data"]["RootChunk"])
+    n = 2
+    while str(n) in used:
+        n += 1
+    return n
+
+
 def write_clip(anims_doc: dict, clip_name: str, frames_data: list, duration: float,
                quantization_bits: int = 12) -> dict:
     """Replace one clip's Simd buffer (SAME TYPE — the JSON converter cannot
@@ -274,7 +296,8 @@ def write_clip(anims_doc: dict, clip_name: str, frames_data: list, duration: flo
             "zeInBytes": 4294967295,
         }
         node["inplaceCompressedBuffer"] = {
-            "BufferId": "2",
+            # BufferId must be unique across the file (vanilla ids: 1, 2, ...)
+            "BufferId": str(_next_buffer_id(anims_doc)),
             "Flags": 7471104,
             "Bytes": base64.b64encode(built["blob"]).decode("ascii"),
         }
