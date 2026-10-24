@@ -99,6 +99,20 @@ foreach ($t in @('desert_eagle_bc.xbm.json', 'desert_eagle_n.xbm.json')) {
   Invoke-Tool $WolvenKitCli @('convert', 'deserialize', (Join-Path $work "xbms\$t"), '-o', $xbmBin, '-v', 'Minimal')
 }
 
+# ------------------------------------------------------------- 5b. animations
+Step '5b/8 animacoes (CS2 .re -> .anims -> CR2W)'
+$animsBin = Join-Path $work 'anims_final\bin'
+New-Item -ItemType Directory -Force -Path $animsBin | Out-Null
+Invoke-Tool $py @(
+  (Join-Path $scripts 're_to_anims.py'), '--',
+  (Join-Path $work 're'),
+  (Join-Path $inv 'anims_json'),
+  (Join-Path $work 'anims_final')
+)
+foreach ($t in @('w_handgun__tsunami_nue__base1.anims.json', 'w_handgun__tsunami_nue__mag_std.anims.json')) {
+  Invoke-Tool $WolvenKitCli @('convert', 'deserialize', (Join-Path $work "anims_final\$t"), '-o', $animsBin, '-v', 'Minimal')
+}
+
 # ---------------------------------------------------------------- 6. factory
 Step '6/8 factory (entity factory -> CR2W)'
 $facTmp = Join-Path $env:TEMP 'de_factory'

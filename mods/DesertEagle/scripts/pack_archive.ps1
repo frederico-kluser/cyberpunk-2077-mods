@@ -58,6 +58,19 @@ foreach ($t in @('desert_eagle_bc.xbm', 'desert_eagle_n.xbm')) {
 }
 Write-Host '  items/factories/textures copied'
 
+# CS2 animation sets compiled by scripts/re_to_anims.py
+New-Item -ItemType Directory -Force -Path (Join-Path $staging 'desert_eagle\animations') | Out-Null
+$animsBin = Join-Path $WorkDir 'anims_final\bin'
+foreach ($t in @('w_handgun__tsunami_nue__base1.anims', 'w_handgun__tsunami_nue__mag_std.anims')) {
+  $src = Join-Path $animsBin $t
+  if (Test-Path $src) {
+    Copy-Item $src (Join-Path $staging "desert_eagle\animations\$t") -Force
+  } else {
+    Write-Host "  [AVISO] anims '$t' em falta ($src) — o app vai referenciar um caminho ausente."
+  }
+}
+Write-Host '  animations copied'
+
 Write-Host '== 2. Localizations (JSON -> CR2W) =='
 $locSrc = Join-Path $modRoot 'src\archivexl\localization'
 foreach ($lang in @('en-us', 'pt-br')) {
