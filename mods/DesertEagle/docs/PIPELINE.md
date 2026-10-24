@@ -144,6 +144,33 @@ posição = (int16 / 32767) × quantizationScale + quantizationOffset   [metros]
 mesmo layout, os offsets dos chunks e os índices. É o trabalho seguinte (o
 escritor de buffer), depois do qual **nenhum passo de GUI fica no caminho**.
 
+### Escritor de buffer (feito) e a corrupção Oodle do WolvenKit (em aberto)
+
+`scripts/mesh_write.py` é o inverso do decodificador: reescreve quantização,
+streams, offsets e `renderBuffer.Bytes` a partir de um `geometry.json`
+(`mesh_buffer.py --dump` produz esse formato). **Verificado ao nível JSON**: o
+roundtrip reproduz contagens (20.767/80.298), bboxes por chunk e offsets — e a
+quantização recalculada bate certo com a original.
+
+Porém, o ciclo `convert deserialize` → `convert serialize` do WolvenKit CLI
+**corrompe o buffer**: os dados sobrevivem até ~520.104 bytes e o resto fica
+zerado. **Prova de que NÃO é do nosso escritor**: o `.mesh` ORIGINAL da Nue
+corrompe exatamente igual (`scripts/buffer_compare.py` mostra ambos os buffers
+com dados até 520.104 depois do ciclo).
+
+Causa: o WolvenKit CLI não carrega o Oodle nativo — *"Oodle couldn't be loaded.
+Using Kraken.dll instead could cause errors"* ×3 por operação — e o fallback
+perde o fim do buffer na compressão. Tentativas (todas sem sucesso):
+- `oo2ext_7_win64.dll` do jogo → WolvenKit.Console/, WolvenKit/, junto ao dotnet/
+- `oo2core_7_win64.dll` (FF7 Remake/Unreal) → idem
+- `oo2core_9_win64.dll` 2.9.10 (WorkingRobot/OodleUE, a redistribuição da Epic) → idem
+
+Próximos passos para resolver: descobrir o caminho de resolução exato do loader
+(`OodleLib` em WolvenKit.Core.dll — pode exigir uma subpasta `lib/` ou um
+caminho do jogo), ou testar a GUI WolvenKit (que pode registar um resolver com
+caminho próprio e revelar a localização esperada). **Impacto:** afeta também o
+`pack` do `.archive` (compressão Oodle) — validar sempre o archive final.
+
 ### Passos no WolvenKit GUI (quando autorizado)
 
 1. Importar o `.glb` por cima do `.mesh` base (o `.mesh` é o contentor; o

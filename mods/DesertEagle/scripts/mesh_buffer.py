@@ -18,13 +18,90 @@ Layout (decoded from `w_handgun__tsunami_nue__base1_01.mesh.json`):
 Position decode:  p = (int16 / 32767) * quantizationScale + quantizationOffset
 (meters; the weapon is ~0.25 m long).
 
-Usage: python3 mesh_buffer.py <mesh.json>
+Usage: python3 mesh_buffer.py <mesh.json> [--dump geometry.json]
 """
 
 import base64
 import json
 import struct
 import sys
+
+DEC4_SCALE = 127.5
+
+
+def decode_dec4(raw, off):
+    """PT_Dec4: 4 unsigned bytes -> (x,y,z,w) in [-1,1]."""
+    b = struct.unpack_from("<4B", raw, off)
+    return tuple(v / DEC4_SCALE - 1.0 for v in b)
+
+
+def _half_to_float(u):
+    sign = (u >> 15) & 1
+    exp = (u >> 10) & 0x1F
+    frac = u & 0x3FF
+    if exp == 0:
+        value = frac * 2.0 ** -24
+    elif exp == 31:
+        value = float("inf") if frac == 0 else float("nan")
+    else:
+        value = (1.0 + frac / 1024.0) * 2.0 ** (exp - 15)
+    return -value if sign else value
+
+
+def decode_half2(raw, off):
+    """PT_Float16_2: two IEEE half floats."""
+    u1, u2 = struct.unpack_from("<2H", raw, off)
+    return (_half_to_float(u1), _half_to_float(u2))
+
+
+def decode_geometry(rc):
+    """Decode all chunks into a plain-JSON geometry description."""
+    blob = find_render_resource(rc)
+    render_buffer = find_node_with_key(rc, "BufferId")
+    raw = base64.b64decode(render_buffer["Bytes"])
+    qoff = blob["quantizationOffset"]
+    qscl = blob["quantizationScale"]
+    ib_off = blob["indexBufferOffset"]
+
+    chunks = []
+    for chunk in blob["renderChunkInfos"]:
+        nv = chunk["numVertices"]
+        ni = chunk["numIndices"]
+        offsets = chunk["chunkVertices"]["byteOffsets"]["Elements"]
+        s0, s1, s2 = offsets[0], offsets[1], offsets[2]
+        te = chunk["chunkIndices"]["teOffset"]
+
+        positions, normals, tangents, uvs = [], [], [], []
+        skin_indices, skin_weights = [], []
+        for v in range(nv):
+            base = s0 + v * 16
+            x, y, z, _w = struct.unpack_from("<4h", raw, base)
+            positions.append([
+                round(x / 32767.0 * qscl["X"] + qoff["X"], 7),
+                round(y / 32767.0 * qscl["Y"] + qoff["Y"], 7),
+                round(z / 32767.0 * qscl["Z"] + qoff["Z"], 7),
+            ])
+            si = struct.unpack_from("<4B", raw, base + 8)
+            sw = struct.unpack_from("<4B", raw, base + 12)
+            skin_indices.append(list(si))
+            skin_weights.append([round(w / 255.0, 5) for w in sw])
+            uvs.append([round(c, 5) for c in decode_half2(raw, s1 + v * 4)])
+            nx, ny, nz, _nw = decode_dec4(raw, s2 + v * 8)
+            normals.append([round(nx, 5), round(ny, 5), round(nz, 5)])
+            tx, ty, tz, tw = decode_dec4(raw, s2 + v * 8 + 4)
+            tangents.append([round(tx, 5), round(ty, 5), round(tz, 5), round(tw, 5)])
+
+        indices = list(struct.unpack_from(f"<{ni}H", raw, ib_off + te))
+        chunks.append({
+            "positions": positions,
+            "normals": normals,
+            "tangents": tangents,
+            "uvs": uvs,
+            "skin_indices": skin_indices,
+            "skin_weights": skin_weights,
+            "indices": indices,
+        })
+    return chunks
 
 
 def load_mesh(path):
@@ -128,6 +205,13 @@ def main():
     size = [gmax[a] - gmin[a] for a in range(3)]
     print(f"MESHBUF TOTAL verts={total_v} indices={total_i}")
     print(f"MESHBUF GLOBAL bbox=({gmin[0]:.4f},{gmin[1]:.4f},{gmin[2]:.4f})..({gmax[0]:.4f},{gmax[1]:.4f},{gmax[2]:.4f}) size=({size[0]:.4f},{size[1]:.4f},{size[2]:.4f})")
+
+    if "--dump" in sys.argv:
+        out = sys.argv[sys.argv.index("--dump") + 1]
+        geo = decode_geometry(rc)
+        json.dump({"chunks": geo}, open(out, "w", encoding="utf-8"))
+        print(f"MESHBUF_DUMP_OK {out} chunks={len(geo)}")
+
     print("MESHBUF_OK")
     return 0
 
