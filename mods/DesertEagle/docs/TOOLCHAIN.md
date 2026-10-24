@@ -94,7 +94,36 @@ tudo vive em `red4ext\plugins\TweakXL\Scripts\`.
 
 ## Ativos extraídos do jogo (molde Tsunami Nue)
 
-*(preenchido após a extração — ver `../assets/extracted/` e o relatório do pipeline)*
+Extraídos **read-only** dos archives para `../assets/extracted/` (depot paths
+preservados); manifesto completo com path|tamanho|archive em
+`../assets/_inventory/provenance.txt`. Total: 100 ficheiros + GLB do molde.
+
+| Papel | Depot path | Archive |
+| --- | --- | --- |
+| **Rig herdado** | `base\weapons\firearms\handgun\tsunami_nue\rig\w_handgun__tsunami_nue__base1.rig` | `basegame_4_animation.archive` |
+| Rig do carregador | `...\rig\w_handgun__tsunami_nue__mag_std.rig` | `basegame_4_animation.archive` |
+| **Anims herdadas** | `base\animations\weapon\firearms\handgun\tsunami_nue\w_handgun__tsunami_nue__base1.anims` (+ `mag_std`, `pma_`/`pwa_` braços FPP) | `basegame_4_animation.archive` / `basegame_1_engine.archive` |
+| Mesh principal | `...\entities\meshes\w_handgun__tsunami_nue__base1_01.mesh` | `basegame_4_gamedata.archive` |
+| Ent raiz | `...\w_handgun__tsunami_nue__base1.ent` | `basegame_4_gamedata.archive` |
+| **App principal** | `...\w_handgun__tsunami_nue.app` | `basegame_3_nightcity.archive` |
+| **GLB do molde** (template de alinhamento) | `../assets/extracted/glb/w_handgun_nue.glb` (1 936 780 B) | gerado por `extract-and-export` |
+
+**Armadilha:** a Nue está espalhada por **4 archives** (`basegame_4_gamedata`,
+`basegame_4_animation`, `basegame_3_nightcity`, `basegame_1_engine`). Extrair só
+do `gamedata` fica sem o `.app` principal, sem o `mag_std_01.mesh` e sem 15
+texturas. Comandos exatos (re-executáveis):
+
+```powershell
+& 'C:\Users\kluse\Tools\WolvenKit\9.1.0\wolvenkit-cli.cmd' archive "<archive>" -l -r "tsunami_nue"
+& 'C:\Users\kluse\Tools\WolvenKit\9.1.0\wolvenkit-cli.cmd' extract "<archive>" -r "tsunami_nue" `
+    -o '<worktree>\mods\DesertEagle\assets\extracted'
+& 'C:\Users\kluse\Tools\WolvenKit\9.1.0\wolvenkit-cli.cmd' extract-and-export "<archive>" -r "tsunami_nue" `
+    -o '<worktree>\mods\DesertEagle\assets\glb_staging' -gp '<jogo>' -u --uext png --mesh-export-type WithMaterials
+```
+
+Notas: `--mesh-export-type` aceita `MeshOnly|Multimesh|WithRig` (`WithMaterials`
+é o default); a saída do CLI mistura percentagens de progresso sem newline —
+gravar cru para ficheiro e filtrar pelo depot path exato.
 
 ## Modelo 3D da Desert Eagle
 

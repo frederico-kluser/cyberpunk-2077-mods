@@ -1,0 +1,11 @@
+barrel_plug
+barrel
+muzzle_slot
+fx_muzzle
+weapon_trigger
+slide
+hammer
+slider_down
+mag_slot
+scope_slot
+pos_ironsight

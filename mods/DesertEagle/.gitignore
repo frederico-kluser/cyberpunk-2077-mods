@@ -23,3 +23,12 @@ assets/glb_staging/
 *.effect
 *.particle
 !docs/**/*.png
+
+# Bytecode Python — nunca versionar.
+__pycache__/
+*.pyc
+
+# Dumps serializados grandes de dados do jogo (regeneráveis com
+# `wolvenkit-cli convert serialize`); ficam só os resumos pequenos
+# (nue_bones.txt, nue_rig.json, provenance.txt).
+assets/_inventory/rig_json/

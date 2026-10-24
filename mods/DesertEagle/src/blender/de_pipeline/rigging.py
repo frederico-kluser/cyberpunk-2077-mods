@@ -17,13 +17,21 @@ from __future__ import annotations
 
 
 def matching_objects(objects, tokens) -> list:
-    """Objects whose name contains any of the given tokens (case-insensitive)."""
+    """Objects selected by the given tokens.
+
+    A token matches an object when the object name equals it (case-insensitive)
+    or starts with '<token>.' — which covers Blender's numeric suffixes
+    ('trigger' -> 'trigger.001') without the substring traps ('trigger' must
+    NOT pull in 'rear_trigger.001'). Use several tokens for several objects.
+    """
     wanted = [token.lower() for token in tokens]
     hits = []
     for obj in objects:
         name = obj.name.lower()
-        if any(token in name for token in wanted):
-            hits.append(obj)
+        for token in wanted:
+            if name == token or name.startswith(token + "."):
+                hits.append(obj)
+                break
     return hits
 
 
@@ -127,22 +135,62 @@ def unweighted_vertices(objects, bone_names) -> list:
     return problems
 
 
+def assign_default_bone(objects, default_bone: str, weight: float = 1.0) -> int:
+    """Give every still-unweighted vertex a home in `default_bone`.
+
+    REDengine 4 crashes on vertices without weights. Parts that have no
+    dedicated moving bone (frame, pins, deco pieces) are rigid to the default
+    bone — usually the weapon body bone of the .rig.
+    """
+    assigned = 0
+    for obj in objects:
+        if obj.type != "MESH":
+            continue
+        group = obj.vertex_groups.get(default_bone) or obj.vertex_groups.new(name=default_bone)
+        homeless = [
+            vertex.index
+            for vertex in obj.data.vertices
+            if not vertex.groups
+        ]
+        if homeless:
+            group.add(homeless, float(weight), "REPLACE")
+            assigned += len(homeless)
+            obj.data.update()
+    return assigned
+
+
 def rig_objects(objects, config: dict, bone_names=None) -> dict:
     """Run the whole rigging stage. `bone_names` is the .rig bone list when
-    known; when omitted, the vertex-group mapping keys are used."""
+    known; when omitted, the vertex-group mapping keys are used.
+
+    `config["default_bone"]` names the bone that adopts every vertex left
+    without weights (frame/pin/deco geometry that has no moving bone).
+    """
     mapping = dict(config.get("vertex_groups", {}))
     known = list(bone_names) if bone_names else list(mapping.keys())
     weight = float(config.get("weights", 1.0))
     max_influences = int(config.get("max_influences", 8))
+    default_bone = str(config.get("default_bone", "") or "")
 
     assigned = assign_vertex_groups(objects, mapping, weight)
-    removed = drop_unknown_groups(objects, known)
+
+    defaulted = 0
+    if default_bone:
+        if known and default_bone not in known:
+            raise ValueError(
+                f"default_bone '{default_bone}' is not a known .rig bone: {known}"
+            )
+        defaulted = assign_default_bone(objects, default_bone, weight)
+
+    removed = drop_unknown_groups(objects, known if known else mapping.keys())
     trimmed = limit_influences(objects, max_influences)
     normalized = normalize_weights(objects)
-    problems = unweighted_vertices(objects, known)
+    problems = unweighted_vertices(objects, known if known else mapping.keys())
 
     return {
         "assigned": assigned,
+        "default_bone": default_bone or None,
+        "vertices_defaulted": defaulted,
         "dropped_groups": removed,
         "vertices_trimmed": trimmed,
         "vertices_normalized": normalized,

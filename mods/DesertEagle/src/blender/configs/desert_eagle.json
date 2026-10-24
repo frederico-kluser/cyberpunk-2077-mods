@@ -1,9 +1,18 @@
 {
   "project_root": "C:/Users/kluse/Projects/cyberpunk-2077-desert-eagle/mods/DesertEagle",
-  "source_model": "assets/raw/desert_eagle.fbx",
-  "base_template": "assets/extracted/w_handgun_nue.glb",
+  "source_model": "assets/raw/desert_eagle_poly.glb",
+  "base_template": "assets/extracted/glb/w_handgun_nue.glb",
   "out_dir": "assets/work",
   "units_per_meter": 1.0,
+  "notes": [
+    "MODELO: 'Rigged Desert Eagle' by PuKkBuMXDD (Artur Migranov) - poly.pizza/m/e9k4dwOzCX - CC-BY 3.0 (atribuicao obrigatoria: ver assets/sources.json -> selected.attribution).",
+    "Partes moveis do modelo: slider, gun_slider, barrel.001, gun_base, gun_locks.001, rear_trigger.001, trigger.001 (sem carregador separado - esta dentro do gun_base).",
+    "OSSOS REAIS do .rig da Tsunami Nue (11, ver assets/_inventory/nue_bones.txt): barrel_plug[raiz], barrel, muzzle_slot, fx_muzzle, weapon_trigger, slide, hammer, slider_down, mag_slot, scope_slot, pos_ironsight[slide].",
+    "Mapeamento partes->ossos: slider->slide, trigger.001->weapon_trigger, rear_trigger.001->hammer, barrel.001/gun_base/gun_locks.001->barrel (corpo da arma).",
+    "default_bone=barrel: todo o vertice sem peso (estrutura fixa) fica rigidamente no osso do corpo - a REDengine 4 crasha com vertices sem peso.",
+    "mag_slot nao recebe geometria: o modelo nao tem carregador separado (opcao de arte futura: separar do gun_base).",
+    "NAO injetar no jogo: todos os artefactos ficam em assets/work (restricao do dono)."
+  ],
   "align": {
     "match_bbox": true,
     "scale_mode": "diagonal",
@@ -11,14 +20,28 @@
     "anchor_template": "bbox_min"
   },
   "rig": {
-    "armature": "w_handgun_nue",
+    "armature": "w_handgun__tsunami_nue__base1",
     "max_influences": 8,
     "weights": 1.0,
-    "bones": [],
+    "default_bone": "barrel",
+    "bones": [
+      "barrel_plug",
+      "barrel",
+      "muzzle_slot",
+      "fx_muzzle",
+      "weapon_trigger",
+      "slide",
+      "hammer",
+      "slider_down",
+      "mag_slot",
+      "scope_slot",
+      "pos_ironsight"
+    ],
     "vertex_groups": {
-      "Slide": ["slide", "corredica"],
-      "Magazine": ["mag", "magazine", "carregador"],
-      "Trigger": ["trigger", "gatilho"]
+      "slide": ["slider", "gun_slider"],
+      "weapon_trigger": ["trigger"],
+      "hammer": ["rear_trigger"],
+      "barrel": ["barrel", "gun_base", "gun_locks"]
     }
   },
   "lods": {
