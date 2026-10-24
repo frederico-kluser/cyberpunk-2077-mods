@@ -32,6 +32,33 @@ TESTS = [
         [sys.executable, os.path.join(HERE, "verify_release.py")],
         "RELEASE_VERIFY_OK",
     ),
+    (
+        "shipped mesh content (vs source geometry)",
+        [
+            sys.executable, os.path.join(HERE, "verify_mesh_content.py"),
+            os.path.join(WORK, "mesh_test", "bin", "desert_eagle.mesh"),
+            os.path.join(WORK, "de_geometry.json"),
+        ],
+        "MESH_CONTENT_VERIFY_OK",
+    ),
+    (
+        "all 13 animation clips (motion + frame counts)",
+        [
+            sys.executable, os.path.join(HERE, "verify_anims_clips.py"),
+            os.path.join(WORK, "anims_final", "bin"),
+            os.path.join(MOD_ROOT, "assets", "_inventory", "anims_json"),
+            os.path.join(WORK, "anims_final", "verify"),
+        ],
+        "ANIMS_CLIPS_VERIFY_OK",
+    ),
+    (
+        "grip root alignment (A @ rest in every clip)",
+        [
+            sys.executable, os.path.join(HERE, "verify_root_align.py"),
+            os.path.join(WORK, "anims_final"),
+        ],
+        "ROOT_ALIGN_VERIFY_OK",
+    ),
 ]
 
 
