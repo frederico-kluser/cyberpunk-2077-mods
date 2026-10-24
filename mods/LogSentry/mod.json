@@ -1,17 +1,19 @@
 {
   "id": "LogSentry",
   "name": "Log Sentry",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "gameVersion": "2.5",
   "author": "Frederico Kluser",
   "license": "MIT",
-  "description": "Diagnostic capture mod: traces every engine callback through files (event names as file names), HUD messages and FTLog, and reports the raw aim-query result. Independent of every other mod.",
+  "description": "Diagnostic capture mod: structured, timestamped, cataloged logging — redscript events as logfmt lines (ts/sim/game clocks), a file-name catalog via the vanilla WriteReportToFile channel, and a CET/Lua side with wall-clock timestamps, JSONL catalog and game-log capture. Independent of every other mod.",
   "homepage": "https://github.com/frederico-kluser/cyberpunk-2077-mods/tree/main/mods/LogSentry",
   "tags": ["diagnostics", "logging", "redscript"],
   "requires": {
-    "redscript": ">=0.5.32"
+    "redscript": ">=0.5.32",
+    "cyberEngineTweaks": ">=1.38.0"
   },
   "files": [
-    "src/reds/LogSentry.reds"
+    "src/reds/LogSentry.reds",
+    "src/lua/init.lua"
   ]
 }

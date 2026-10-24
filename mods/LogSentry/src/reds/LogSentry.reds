@@ -1,75 +1,76 @@
 /*
- * LogSentry — diagnostic capture mod.
+ * LogSentry — diagnostic capture mod (redscript side).
  *
- * Traces every relevant engine callback through EVERY sink the vanilla game
- * offers, so the game's behaviour can be catalogued from the outside instead
- * of guessed:
+ * Emits STRUCTURED, TIMESTAMPED log lines through every sink available in
+ * vanilla redscript, and mirrors the same events as a file-name catalog:
  *
- *   1. FILES  — ResourceMetricsReportGenerator.WriteReportToFile() writes a
- *               real file whose NAME encodes the event ("LH_<seq>_<event>.txt").
- *               The file CONTENT is the engine's own metrics report; the
- *               CATALOG is the directory listing itself (who fired, in what
- *               order, how many times).
- *   2. HUD    — SimpleScreenMessage via the UI_Notifications blackboard: the
- *               one visual channel proven to render in this install.
- *   3. FTLog  — the engine's script log channel.
+ *   FTLog line (logfmt, one event per line — lands in the CET game log):
+ *     [LogSentry] ts=<GetGameTimeStamp 3dp> sim=<EngineTime seconds 3dp>
+ *                 game=<game seconds> lvl=<DEBUG|INFO|WARN|ERROR> cat=<...>
+ *                 ev=<stable_name> <key=value ...>
  *
- * It also runs the same aim query the label uses and reports the raw result,
- * so "no target" can be told apart from "query never runs".
+ *   File catalog: ResourceMetricsReportGenerator.WriteReportToFile("LS-...")
+ *   — the only vanilla write-to-file channel with a caller-controlled NAME,
+ *   so the file name itself carries the event (content is the engine's own
+ *   metrics report). Also the empirical probe of that undocumented API.
  *
- * This mod is intentionally independent of LethalHeadshots: it must keep
- * working even when everything else fails.
+ *   Clocks (three, deliberately): ts = TimeSystem.GetGameTimeStamp (semantics
+ *   proven by the CLOCK_PROBE line: real epoch vs game seconds),
+ *   sim = EngineTime.ToFloat(GetSimTime) (monotonic engine seconds — ordering
+ *   within a session), game = GameTime.GetSeconds (world clock).
+ *
+ * The CET side (src/lua/init.lua) adds wall-clock timestamps, a JSONL file
+ * and captures the game log this stream lands in.
  */
 
 module LogSentry
 
-// Running sequence number, so file names sort in event order.
+// Running sequence number for the file-name catalog.
 @addField(PlayerPuppet)
 public let m_sentrySeq: Int32;
 
 // ---------------------------------------------------------------------------
-// The three sinks
+// Structured line
 // ---------------------------------------------------------------------------
 
-func SentryNote(tag: String) -> Void {
-  let player: ref<PlayerPuppet> = GetPlayer(GetGameInstance());
+func LSEmit(lvl: String, cat: String, ev: String, fields: String) -> Void {
+  let game: GameInstance = GetGameInstance();
+  let ts: Float = GameInstance.GetTimeSystem(game).GetGameTimeStamp();
+  let sim: Float = EngineTime.ToFloat(GameInstance.GetSimTime(game));
+  let world: Int32 = GameTime.GetSeconds(GameInstance.GetGameTime(game));
+  let line: String = s"[LogSentry] ts=\(FloatToStringPrec(ts, 3)) sim=\(FloatToStringPrec(sim, 3)) game=\(world) lvl=\(lvl) cat=\(cat) ev=\(ev) \(fields)";
+  FTLog(line);
+}
 
-  // Sink 1 — the file catalog (name = the log line).
+// Sparse events also go to the file-name catalog (name = the log line).
+func LSCatalog(player: ref<PlayerPuppet>, ev: String) -> Void {
   let seq: String = "0";
   if IsDefined(player) {
     player.m_sentrySeq += 1;
     seq = IntToString(player.m_sentrySeq);
   };
-  ResourceMetricsReportGenerator.WriteReportToFile("LH_" + seq + "_" + tag + ".txt");
+  ResourceMetricsReportGenerator.WriteReportToFile("LS-" + seq + "-" + ev + ".txt");
+}
 
-  // Sink 3 — engine log channel.
-  FTLog("LogSentry: " + seq + " " + tag);
-
-  // Sink 2 — visible HUD message (always; these events are sparse on purpose).
-  if IsDefined(player) {
-    let msg: SimpleScreenMessage;
-    msg.isShown = true;
-    msg.duration = 3.00;
-    msg.message = "LH " + seq + " " + tag;
-    msg.type = SimpleMessageType.Neutral;
-    GameInstance.GetBlackboardSystem(player.GetGame()).Get(GetAllBlackboardDefs().UI_Notifications).SetVariant(GetAllBlackboardDefs().UI_Notifications.WarningMessage, ToVariant(msg), true);
-  };
+func LSNote(player: ref<PlayerPuppet>, lvl: String, cat: String, ev: String, fields: String) -> Void {
+  LSEmit(lvl, cat, ev, fields);
+  LSCatalog(player, ev);
 }
 
 // ---------------------------------------------------------------------------
-// Aim query report — the exact question the label needs answered
+// Aim query report — the raw answer the label needs
 // ---------------------------------------------------------------------------
 
-func SentryAimReport() -> Void {
+func LSAimReport() -> Void {
   let player: ref<PlayerPuppet> = GetPlayer(GetGameInstance());
   if !IsDefined(player) {
-    SentryNote("AIM_NOP");
+    LSEmit("INFO", "aim", "aim_probe", "result=noplayer");
     return;
   };
 
   let ts: ref<TargetingSystem> = GameInstance.GetTargetingSystem(player.GetGame());
   if !IsDefined(ts) {
-    SentryNote("AIM_NOTS");
+    LSEmit("INFO", "aim", "aim_probe", "result=notargetingsystem");
     return;
   };
 
@@ -86,18 +87,18 @@ func SentryAimReport() -> Void {
   let lookA: ref<GameObject> = ts.GetLookAtObject(player, true, true);
   let lookB: ref<GameObject> = ts.GetLookAtObject(player, false, false);
 
-  let t: String = "";
-  if IsDefined(tracked) { t += "T"; };
-  if IsDefined(closest) { t += "C"; };
-  if IsDefined(lookA) { t += "A"; };
-  if IsDefined(lookB) { t += "B"; };
-  if Equals(t, "") { t = "NONE"; };
+  let found: String = "";
+  if IsDefined(tracked) { found += "T"; };
+  if IsDefined(closest) { found += "C"; };
+  if IsDefined(lookA) { found += "A"; };
+  if IsDefined(lookB) { found += "B"; };
+  if Equals(found, "") { found = "NONE"; };
 
-  SentryNote("AIM_" + t);
+  LSEmit("INFO", "aim", "aim_probe", s"found=\(found)");
 }
 
 // ---------------------------------------------------------------------------
-// Ticker probe — does a DelayCallback ever fire at all?
+// Ticker probe — proves the DelayCallback chain and the three clocks
 // ---------------------------------------------------------------------------
 
 public class SentryTicker extends DelayCallback {
@@ -113,7 +114,7 @@ public class SentryTicker extends DelayCallback {
     let ticker: ref<SentryTicker> = new SentryTicker();
     ticker.m_player = player;
     ticker.m_count = 0;
-    SentryNote("TICKER_START");
+    LSNote(player, "INFO", "sessao", "ticker_start", "");
     ticker.Schedule();
   }
 
@@ -130,30 +131,35 @@ public class SentryTicker extends DelayCallback {
   public func Call() -> Void {
     this.Schedule();
     if !IsDefined(this.m_player) {
-      SentryNote("TICKER_DEAD");
+      LSEmit("WARN", "sessao", "ticker_dead", "");
       return;
     };
 
     this.m_count += 1;
+    if this.m_count == 1 {
+      // The clock probe: all three clocks in one line — settles the
+      // GetGameTimeStamp semantics (real epoch vs game seconds).
+      LSCatalog(this.m_player, "clock_probe");
+      LSAimReport();
+    };
     if this.m_count <= 3 {
-      SentryNote("TICK_" + IntToString(this.m_count));
-      SentryAimReport();
+      LSEmit("DEBUG", "sessao", "tick", s"n=\(this.m_count)");
     } else {
       if this.m_count % 25 == 0 {
-        SentryNote("TICK_" + IntToString(this.m_count));
+        LSEmit("DEBUG", "sessao", "tick", s"n=\(this.m_count)");
       };
     };
   }
 }
 
 // ---------------------------------------------------------------------------
-// Engine hooks — every sparse, proven callback we can wrap
+// Engine hooks (script methods only — @wrapMethod cannot wrap natives)
 // ---------------------------------------------------------------------------
 
 @wrapMethod(gameuiCrosshairContainerController)
 protected cb func OnInitialize() -> Bool {
   let ret: Bool = wrappedMethod();
-  SentryNote("CONT_INIT");
+  LSNote(GetPlayer(GetGameInstance()), "INFO", "hud", "cont_init", "");
   SentryTicker.Start(GetPlayer(GetGameInstance()));
   return ret;
 }
@@ -161,7 +167,7 @@ protected cb func OnInitialize() -> Bool {
 @wrapMethod(gameuiCrosshairContainerController)
 protected cb func OnPlayerAttach(playerGameObject: ref<GameObject>) -> Bool {
   let ret: Bool = wrappedMethod(playerGameObject);
-  SentryNote("CONT_ATTACH");
+  LSNote(playerGameObject as PlayerPuppet, "INFO", "hud", "cont_attach", "");
   SentryTicker.Start(playerGameObject as PlayerPuppet);
   return ret;
 }
@@ -169,44 +175,73 @@ protected cb func OnPlayerAttach(playerGameObject: ref<GameObject>) -> Bool {
 @wrapMethod(gameuiCrosshairContainerController)
 protected cb func OnWeaponSwap(value: Variant) -> Bool {
   let ret: Bool = wrappedMethod(value);
-  SentryNote("WEAPON_SWAP");
+  LSEmit("INFO", "equip", "weapon_swap", "");
   return ret;
 }
 
 @wrapMethod(gameuiCrosshairContainerController)
 protected cb func OnPSMVisionStateChanged(value: Int32) -> Bool {
   let ret: Bool = wrappedMethod(value);
-  SentryNote("VISION_" + IntToString(value));
+  LSEmit("DEBUG", "psm", "vision_state", s"value=\(value)");
   return ret;
 }
 
 @wrapMethod(gameuiCrosshairContainerController)
 protected cb func OnInteractionStateChange(value: Variant) -> Bool {
   let ret: Bool = wrappedMethod(value);
-  SentryNote("INTERACT");
+  LSEmit("DEBUG", "psm", "interaction", "");
   return ret;
 }
 
 @wrapMethod(gameuiCrosshairBaseGameController)
 protected func OnCrosshairStateChange(oldState: gamePSMCrosshairStates, newState: gamePSMCrosshairStates) -> Void {
   wrappedMethod(oldState, newState);
-  SentryNote("XHAIR_STATE");
-  SentryAimReport();
+  LSEmit("DEBUG", "hud", "xhair_state", s"old=\(oldState) new=\(newState)");
+  LSAimReport();
 }
 
 @wrapMethod(DamageSystem)
 private final func ProcessLocalizedDamage(hitEvent: ref<gameHitEvent>) -> Void {
   wrappedMethod(hitEvent);
   if hitEvent.projectionPipeline {
-    SentryNote("PROJ_HIT");
+    LSEmit("DEBUG", "damage", "proj_hit", "");
   } else {
-    SentryNote("REAL_HIT");
-    SentryAimReport();
+    LSEmit("INFO", "damage", "real_hit", "");
+    LSAimReport();
   };
 }
 
 @wrapMethod(DamageSystem)
 public final func ClearPreviewTargetStruct() -> Void {
   wrappedMethod();
-  SentryNote("CLEAR_PREVIEW");
+  LSEmit("DEBUG", "aim", "clear_preview", "");
+}
+
+// Session boundaries (the community's own session detectors).
+@wrapMethod(QuestTrackerGameController)
+protected cb func OnInitialize() -> Bool {
+  let ret: Bool = wrappedMethod();
+  LSNote(GetPlayer(GetGameInstance()), "INFO", "sessao", "session_ui_init", "");
+  return ret;
+}
+
+@wrapMethod(QuestTrackerGameController)
+protected cb func OnUninitialize() -> Bool {
+  let ret: Bool = wrappedMethod();
+  LSEmit("INFO", "sessao", "session_ui_uninit", "");
+  return ret;
+}
+
+@wrapMethod(gameuiInGameMenuGameController)
+protected cb func OnInitialize() -> Bool {
+  let ret: Bool = wrappedMethod();
+  LSEmit("INFO", "sessao", "menu_open", "");
+  return ret;
+}
+
+@wrapMethod(gameuiInGameMenuGameController)
+protected cb func OnUninitialize() -> Bool {
+  let ret: Bool = wrappedMethod();
+  LSEmit("INFO", "sessao", "menu_close", "");
+  return ret;
 }

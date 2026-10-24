@@ -33,6 +33,20 @@ foreach ($file in (Get-ChildItem -LiteralPath $sourceDir -Filter '*.reds' -File)
   $copied++
 }
 
+# Mods may also ship a CET/Lua side (diagnostics): deploy it to the CET mods
+# folder when present.
+$luaDir = Join-Path $modDir 'src\lua'
+if (Test-Path -LiteralPath $luaDir) {
+  $cetDir = Join-Path $game 'bin\x64\plugins\cyber_engine_tweaks\mods'
+  $luaTarget = Join-Path $cetDir $manifest.id
+  New-Item -ItemType Directory -Force -Path $luaTarget | Out-Null
+  foreach ($file in (Get-ChildItem -LiteralPath $luaDir -Filter '*.lua' -File)) {
+    Copy-Item -LiteralPath $file.FullName -Destination $luaTarget -Force
+    Write-Host "  -> lua:$($file.Name) => $luaTarget"
+    $copied++
+  }
+}
+
 Write-Host "$copied ficheiro(s) instalados em $targetDir"
 
 if (-not (Test-Path -LiteralPath (Join-Path $game 'engine\tools\scc.exe'))) {
