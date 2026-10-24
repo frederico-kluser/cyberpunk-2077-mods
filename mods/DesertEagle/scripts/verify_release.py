@@ -7,7 +7,7 @@ Checks (all against the actual files in assets/work/release):
   4. .app: one appearance `desert_eagle`, one body mesh component pointing at
      our mesh, baseEntity -> our .ent, resolvedDependencies empty
   5. .ent: exactly one skinned mesh component -> our mesh
-  6. .mesh: decodes to sane game-space geometry (2 LOD chunks, ~0.25 m)
+  6. .mesh: decodes to sane game-space geometry (one material chunk, ~0.25 m)
   7. factory + yaml + xl cross-references line up
 
 Usage: python3 verify_release.py [release_dir]
@@ -187,7 +187,11 @@ def main():
     import mesh_buffer as mb
     mesh = json.load(open(os.path.join(json_dir, "w_handgun_desert_eagle.mesh.json"), encoding="utf-8"))
     geo = mb.decode_geometry(mesh["Data"]["RootChunk"])
-    check(len(geo) == 2, f"mesh has 2 LOD chunks (got {len(geo)})")
+    # vanilla chunks are per-material parts; our merged body is ONE chunk —
+    # duplicated chunks make the gun render twice over itself
+    check(len(geo) == 1, f"mesh has exactly one material chunk (got {len(geo)})")
+    unique = len({(tuple(map(tuple, c["positions"][:64]))) for c in geo}) == len(geo)
+    check(unique, "mesh chunks are not duplicate copies")
     pts = [p for ch in geo for p in ch["positions"]]
     if pts:
         mn = [min(p[i] for p in pts) for i in range(3)]
