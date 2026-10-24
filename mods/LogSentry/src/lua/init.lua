@@ -108,10 +108,33 @@ local function tailGameLog()
 end
 
 local function openCatalog()
+  -- Try several roots; PRINT the outcome so the monitor can see it (the first
+  -- version failed silently and no JSONL was ever created).
+  local candidates = {}
   local root = gameRoot()
-  state.outPath = root .. "/r6/logs/logsentry.jsonl"
-  state.out = io.open(state.outPath, "a")
+  table.insert(candidates, root .. "/r6/logs/logsentry.jsonl")
+  table.insert(candidates, "plugins/cyber_engine_tweaks/mods/LogSentry/logsentry.jsonl")
+  table.insert(candidates, "../../r6/logs/logsentry.jsonl")
+  for _, path in ipairs(candidates) do
+    local f = io.open(path, "a")
+    if f then
+      state.out = f
+      state.outPath = path
+      print("[LogSentry-Lua] catalog open: " .. path)
+      break
+    else
+      print("[LogSentry-Lua] catalog open FAILED: " .. path)
+    end
+  end
   state.gamelogPath = root .. "/bin/x64/plugins/cyber_engine_tweaks/gamelog.log"
+  local gl = io.open(state.gamelogPath, "r")
+  if not gl then
+    state.gamelogPath = "plugins/cyber_engine_tweaks/gamelog.log"
+    print("[LogSentry-Lua] gamelog fallback: " .. state.gamelogPath)
+  else
+    gl:close()
+    print("[LogSentry-Lua] gamelog: " .. state.gamelogPath)
+  end
   emit("INFO", "sessao", "lua_init", {
     out = state.outPath,
     gamelog = state.gamelogPath,
