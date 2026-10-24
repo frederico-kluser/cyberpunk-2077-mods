@@ -33,13 +33,3 @@ public func SpareAllies() -> Bool {
 public func SpareProtectedTargets() -> Bool {
   return false;
 }
-
-/*
- * Diagnostic probes for the "QUE OTA" label: two bars above the crosshair
- * (blue = a target is under the crosshair, red = over a killable head). The
- * crosshair itself also tints white/orange/red. Set to false once the label
- * is confirmed working to hide the bars (the tint stays).
- */
-public func DebugProbes() -> Bool {
-  return true;
-}
