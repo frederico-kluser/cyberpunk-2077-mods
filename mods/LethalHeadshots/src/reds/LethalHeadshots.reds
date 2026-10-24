@@ -114,40 +114,47 @@ public class LhAimTicker extends DelayCallback {
 
     let targetSeen: Bool;
     let overHead: Bool = IsCrosshairOnHead(this.m_player, targetSeen);
-    this.m_ctrl.LhUpdateOverlay(targetSeen, overHead);
+    let risingEdge: Bool = overHead && NotEquals(overHead, this.m_overHead);
 
-    // Life proofs (DebugProbes): edge-triggered HUD messages AND FTLog markers
-    // (the script runtime log), so "nothing at all" can be told apart from
-    // "ticker dead" vs "aim query empty" both in-game and from the logs.
+    // Proofs FIRST (cheap and safe): they must keep working even if the widget
+    // work at the end of the tick throws at runtime.
+    if DebugProbes() {
+      if targetSeen && NotEquals(targetSeen, this.m_targetSeen) {
+        PushQueOtaMessage(this.m_player, "QUE OTA · alvo sob a mira");
+      };
+      this.m_targetSeen = targetSeen;
+
+      if risingEdge {
+        this.m_msgTicks = 0;
+        PushQueOtaMessage(this.m_player, "QUE OTA");
+      } else {
+        if overHead {
+          this.m_msgTicks += 1;
+          if this.m_msgTicks >= 16 {
+            this.m_msgTicks = 0;
+            PushQueOtaMessage(this.m_player, "QUE OTA");
+          };
+        } else {
+          this.m_msgTicks = 0;
+        };
+      };
+    };
+
+    // Overlay LAST — the risky part. `fresh` rebuilds the widget tree from
+    // scratch on every rising edge, so a widget the game detached (weapon
+    // swap, holster, scene change) can never block the label again.
+    this.m_ctrl.LhUpdateOverlay(targetSeen, overHead, risingEdge);
+    this.m_overHead = overHead;
+
     if DebugProbes() {
       this.m_ticks += 1;
       if this.m_ticks == 1 {
         FTLog("LethalHeadshots: primeiro tick do ticker");
       };
-      if targetSeen && NotEquals(targetSeen, this.m_targetSeen) {
-        FTLog("LethalHeadshots: alvo detetado sob a mira");
-        PushQueOtaMessage(this.m_player, "QUE OTA · alvo sob a mira");
-      };
-      if !targetSeen && this.m_targetSeen {
-        FTLog("LethalHeadshots: mira saiu do alvo");
-      };
-      this.m_targetSeen = targetSeen;
-    };
-
-    // Vanilla HUD message: refreshed every ~2 s while over a head.
-    if DebugProbes() && overHead {
-      if NotEquals(overHead, this.m_overHead) {
-        this.m_msgTicks = 0;
-        PushQueOtaMessage(this.m_player, "QUE OTA");
-      } else {
-        this.m_msgTicks += 1;
-        if this.m_msgTicks >= 16 {
-          this.m_msgTicks = 0;
-          PushQueOtaMessage(this.m_player, "QUE OTA");
-        };
+      if risingEdge {
+        FTLog("LethalHeadshots: cabeca sob a mira");
       };
     };
-    this.m_overHead = overHead;
   }
 }
 
@@ -196,15 +203,21 @@ protected cb func OnPlayerAttach(playerGameObject: ref<GameObject>) -> Bool {
   return ret;
 }
 
-// Called every tick: refreshes all three channels. Idempotent on purpose.
+// Called every tick: refreshes all three channels. `fresh` rebuilds the
+// overlay widgets from scratch — the game can detach them from the tree on
+// weapon swap/holster/scene changes, and a stale ref would keep driving a dead
+// widget forever (which is why the label used to work only once).
 @addMethod(gameuiCrosshairContainerController)
-public final func LhUpdateOverlay(targetSeen: Bool, overHead: Bool) -> Void {
+public final func LhUpdateOverlay(targetSeen: Bool, overHead: Bool, fresh: Bool) -> Void {
   let root: wref<inkCompoundWidget> = this.GetRootCompoundWidget();
   if !IsDefined(root) {
     return;
   };
 
-  if !IsDefined(this.m_lhText) {
+  if fresh || !IsDefined(this.m_lhText) {
+    this.m_lhText = null;
+    this.m_lhProbeTarget = null;
+    this.m_lhProbeHead = null;
     this.LhCreateOverlayWidgets(root);
   };
 
