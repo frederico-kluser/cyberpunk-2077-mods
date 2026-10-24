@@ -118,11 +118,20 @@ def main():
                 if anim["name"]["$value"] == clip:
                     clip_type = anim["animBuffer"]["Data"]["$type"]
             if clip_type == "animAnimationBufferCompressed":
+                # per-frame raw keys (const-only would freeze the clip at
+                # frame 0 — caught by verify_anims_clips.py)
                 joint_keys = {}
+                denom = max(1, num_frames - 1)
                 for j, joint in enumerate(frames_data[0]):
                     joint_keys[j] = {
-                        "position": [(0.0, tuple(joint["t"]))],
-                        "rotation": [(0.0, tuple(joint["r"]))],
+                        "position": [
+                            (f * duration / denom, tuple(frames_data[f][j]["t"]))
+                            for f in range(num_frames)
+                        ],
+                        "rotation": [
+                            (f * duration / denom, tuple(frames_data[f][j]["r"]))
+                            for f in range(num_frames)
+                        ],
                     }
                 import anims_write as cw
                 result = cw.write_clip(doc, clip, joint_keys, duration, num_frames)
