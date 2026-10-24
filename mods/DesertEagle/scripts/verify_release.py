@@ -79,6 +79,15 @@ def main():
     check(os.path.isfile(xl), "release/desert_eagle.archive.xl exists")
     check(os.path.isfile(yaml), "release/desert_eagle.yaml exists")
 
+    # the ballistic modifiers must be LINKED from the item record or they stay
+    # orphaned and the gun silently uses the inherited Nue values (happened once)
+    ytxt = open(yaml, encoding="utf-8").read()
+    item_block = ytxt.split("Items.DesertEagle:", 1)[-1].split("\nDesertEagle.Stats.", 1)[0]
+    check(
+        "statModifiers" in item_block and "DesertEagle.Stats.DPS" in item_block,
+        "yaml links the DesertEagle.Stats modifiers to the item record",
+    )
+
     # 2. archive entries
     listing = wk("archive", archive, "-l", "-v", "Minimal")
     found = [e.strip() for e in listing.splitlines() if "\\" in e and "." in e]
