@@ -108,13 +108,26 @@ local function tailGameLog()
 end
 
 local function openCatalog()
-  -- Try several roots; PRINT the outcome so the monitor can see it (the first
-  -- version failed silently and no JSONL was ever created).
+  -- ABSOLUTE paths derived from this very file (debug.getinfo source):
+  -- relative paths all fail because the CET process CWD is not bin\x64 —
+  -- proven by the first session: every io.open returned nil.
+  local src = debug.getinfo(1, "S").source
+  if src:sub(1, 1) == "@" then
+    src = src:sub(2)
+  end
+  -- ...\bin\x64\plugins\cyber_engine_tweaks\mods\LogSentry\init.lua
+  local modDir = src:match("^(.*)[/\\][^/\\]*$") or "."
+  local cetDir = modDir:match("^(.*)[/\\]mods[/\\][^/\\]*$") or modDir
+  local root = modDir:match("^(.*[/\\])bin[/\\]x64") or nil
+
   local candidates = {}
-  local root = gameRoot()
-  table.insert(candidates, root .. "/r6/logs/logsentry.jsonl")
-  table.insert(candidates, "plugins/cyber_engine_tweaks/mods/LogSentry/logsentry.jsonl")
-  table.insert(candidates, "../../r6/logs/logsentry.jsonl")
+  if root then
+    table.insert(candidates, root .. "r6/logs/logsentry.jsonl")
+    state.gamelogPath = root .. "bin/x64/plugins/cyber_engine_tweaks/gamelog.log"
+  end
+  table.insert(candidates, modDir .. "/logsentry.jsonl")
+  table.insert(candidates, cetDir .. "/logsentry.jsonl")
+
   for _, path in ipairs(candidates) do
     local f = io.open(path, "a")
     if f then
@@ -126,15 +139,18 @@ local function openCatalog()
       print("[LogSentry-Lua] catalog open FAILED: " .. path)
     end
   end
-  state.gamelogPath = root .. "/bin/x64/plugins/cyber_engine_tweaks/gamelog.log"
+
+  if not state.gamelogPath then
+    state.gamelogPath = cetDir .. "/gamelog.log"
+  end
   local gl = io.open(state.gamelogPath, "r")
   if not gl then
-    state.gamelogPath = "plugins/cyber_engine_tweaks/gamelog.log"
-    print("[LogSentry-Lua] gamelog fallback: " .. state.gamelogPath)
+    print("[LogSentry-Lua] gamelog open FAILED: " .. state.gamelogPath)
   else
     gl:close()
     print("[LogSentry-Lua] gamelog: " .. state.gamelogPath)
   end
+
   emit("INFO", "sessao", "lua_init", {
     out = state.outPath,
     gamelog = state.gamelogPath,
