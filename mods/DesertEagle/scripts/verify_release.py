@@ -114,6 +114,36 @@ def main():
     check(depot_is(be, "desert_eagle\\items\\desert_eagle.ent"), "app baseEntity points at our ent")
     check(a0.get("resolvedDependencies") == [], "app resolvedDependencies is empty")
 
+    # no vanilla mesh may survive in the COMPONENTS (the render source of truth)
+    def mesh_refs(node, out):
+        if isinstance(node, dict):
+            for k, v in node.items():
+                if k in ("DepotPath", "depotPath"):
+                    val = v.get("$value") if isinstance(v, dict) else v
+                    if isinstance(val, str) and val.endswith(".mesh"):
+                        out.append(val)
+                else:
+                    mesh_refs(v, out)
+        elif isinstance(node, list):
+            for item in node:
+                mesh_refs(item, out)
+
+    refs = []
+    mesh_refs(a0.get("components"), refs)
+    vanilla = [r for r in refs if "tsunami_nue" in r]
+    check(not vanilla, f"components have no vanilla mesh references (found {len(vanilla)})")
+
+    # compiledData is a stale cooked cache — provably inert while
+    # cookedAppearanceData is empty (the engine renders from the components)
+    chunks = (a0.get("compiledData", {}).get("Data", {}) or {}).get("Chunks") or []
+    cooked = None
+    for ch in chunks:
+        c = ch.get("Data", ch)
+        if c.get("$type") == "entVisualControllerComponent":
+            cad = c.get("cookedAppearanceData", {})
+            cooked = cad.get("DepotPath", {}).get("$value") if isinstance(cad, dict) else None
+    check(cooked in ("0", 0, None), f"compiledData cookedAppearanceData is empty (inert cache), got {cooked}")
+
     # 5. ent coherence
     ent = json.load(open(os.path.join(json_dir, "desert_eagle.ent.json"), encoding="utf-8"))
     ent_comps = [c.get("Data", c) for c in (ent["Data"]["RootChunk"].get("components") or [])]
