@@ -34,9 +34,13 @@ $scripts = Join-Path $modRoot 'scripts'
 function Step($msg) { Write-Host "`n== $msg ==" -ForegroundColor Cyan }
 function Fail($msg) { throw "Erro: $msg — Solução: ver a saída acima." }
 
-function Invoke-Tool([string]$exe, [string[]]$argv) {
-  & $exe @argv 2>&1 | ForEach-Object { Write-Host "  $_" }
+function Invoke-Tool([string]$exe, [string[]]$argv, [string]$marker = '') {
+  $out = & $exe @argv 2>&1 | ForEach-Object { Write-Host "  $_"; "$_" }
   if ($LASTEXITCODE -ne 0) { Fail "comando falhou: $exe $($argv -join ' ')" }
+  # Blender exits 0 even when the python stage raised — require the marker
+  if ($marker -and -not ($out -match $marker)) {
+    Fail "etapa nao produziu '$marker' (script falhou em silencio?)"
+  }
 }
 
 $py = Join-Path (Split-Path $BlenderExe) '5.2\python\bin\python.exe'
@@ -48,7 +52,7 @@ $geo = Join-Path $work 'de_geometry.json'
 Invoke-Tool $BlenderExe @(
   '--background', '--python', (Join-Path $modRoot 'src\blender\export_geometry.py'), '--',
   (Join-Path $inv 'mesh_json\w_handgun__tsunami_nue__base1_01.mesh.json'), $geo
-)
+) 'GEOM_OK'
 if (-not (Test-Path $geo)) { Fail 'geometry.json não foi gerado.' }
 
 # ---------------------------------------------------------------- 2. material
@@ -94,7 +98,7 @@ Invoke-Tool $BlenderExe @(
   (Join-Path $work 'xbms'),
   "color:$tex\texture_00.png", (Join-Path $inv 'xbm_json\w_tsunami_decal_01_d01.xbm.json'), 'desert_eagle_bc', '1024',
   "normal:$tex\texture_01.png", (Join-Path $inv 'xbm_json\w_handgun__tsunami_nue__base1_01_n01.xbm.json'), 'desert_eagle_n', '1024'
-)
+) 'XBM_DONE'
 foreach ($t in @('desert_eagle_bc.xbm.json', 'desert_eagle_n.xbm.json')) {
   Invoke-Tool $WolvenKitCli @('convert', 'deserialize', (Join-Path $work "xbms\$t"), '-o', $xbmBin, '-v', 'Minimal')
 }
