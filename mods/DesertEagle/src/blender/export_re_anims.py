@@ -40,14 +40,27 @@ BONE_MAP = {
     "v_weapon_deagle_hammer_3": "hammer",
 }
 
-# target anim -> (CS2 action, source frames, target frames per the Nue sets)
-TARGETS = {
-    "recoil_shoulder": ("firstperson_shoot1", 16, 11),
-    "first_equip": ("firstperson_draw", 24, 90),
-    "empty_reload": ("firstperson_reload", 52, 101),
-    "empty_reload_01": ("firstperson_reload", 52, 101),
-    "empty_reload_02": ("firstperson_reload", 52, 101),
-    "weapon_empty": ("firstperson_idle", 0, 2),
+# target animset -> {anim name: (CS2 action, source frames, target frames)}
+# The two Nue sets use overlapping names, and the .re filename IS the internal
+# anim name, so each set exports into its own folder.
+SETS = {
+    "base1": {
+        "recoil_shoulder": ("firstperson_shoot1", 16, 11),
+        "first_equip": ("firstperson_draw", 24, 90),
+        "empty_reload": ("firstperson_reload", 52, 101),
+        "empty_reload_01": ("firstperson_reload", 52, 101),
+        "empty_reload_02": ("firstperson_reload", 52, 101),
+        "weapon_empty": ("firstperson_idle", 0, 2),
+    },
+    "mag_std": {
+        "first_equip": ("firstperson_draw", 24, 108),
+        "reload": ("firstperson_reload", 52, 81),
+        "reload_01": ("firstperson_reload", 52, 81),
+        "reload_02": ("firstperson_reload", 52, 81),
+        "empty_reload": ("firstperson_reload", 52, 101),
+        "empty_reload_01": ("firstperson_reload", 52, 101),
+        "empty_reload_02": ("firstperson_reload", 52, 101),
+    },
 }
 
 
@@ -134,29 +147,32 @@ def main() -> int:
     re_export.build_template(template, bones, num_frames=2)
     print("RE_TEMPLATE_OK", template)
 
-    for target_name, (action_name, src_last, dst_frames) in TARGETS.items():
-        action = bpy.data.actions.get(action_name)
-        if action is None:
-            print("RE_MISSING_ACTION", action_name)
-            continue
+    for set_name, targets in SETS.items():
+        set_dir = os.path.join(out_dir, set_name)
+        os.makedirs(set_dir, exist_ok=True)
+        for target_name, (action_name, src_last, dst_frames) in targets.items():
+            action = bpy.data.actions.get(action_name)
+            if action is None:
+                print("RE_MISSING_ACTION", action_name)
+                continue
 
-        sampled = sample_action(arm, action, src_last, dst_frames)
+            sampled = sample_action(arm, action, src_last, dst_frames)
 
-        rows = {}
-        for bone in bones:
-            name = bone["name"]
-            if name in sampled:
-                mats = []
-                for m in sampled[name]:
-                    delta = cs2_rest[name].inverted() @ m
-                    mats.append(nue_rest[name] @ delta)
-            else:
-                mats = [nue_rest[name]] * dst_frames
-            rows[name] = [matrix_to_row(m, float(i)) for i, m in enumerate(mats)]
+            rows = {}
+            for bone in bones:
+                name = bone["name"]
+                if name in sampled:
+                    mats = []
+                    for m in sampled[name]:
+                        delta = cs2_rest[name].inverted() @ m
+                        mats.append(nue_rest[name] @ delta)
+                else:
+                    mats = [nue_rest[name]] * dst_frames
+                rows[name] = [matrix_to_row(m, float(i)) for i, m in enumerate(mats)]
 
-        out_path = os.path.join(out_dir, f"{target_name}.re")
-        re_export.replace_curves(template, out_path, rows, times=range(dst_frames))
-        print(f"RE_OK {out_path} frames={dst_frames} action={action_name}")
+            out_path = os.path.join(set_dir, f"{target_name}.re")
+            re_export.replace_curves(template, out_path, rows, times=range(dst_frames))
+            print(f"RE_OK {out_path} frames={dst_frames} action={action_name}")
 
     print("RE_EXPORT_DONE")
     return 0
