@@ -24,6 +24,8 @@ import base64
 import json
 import struct
 
+from anims_write_simd import _next_buffer_id  # shared unique-id allocator
+
 W_SIGN_SHIFT = 15
 COMPONENT_SHIFT = 13
 BONE_IDX_MASK = 0x1FFF
@@ -147,7 +149,8 @@ def write_clip(anims_doc: dict, clip_name: str, joint_keys: dict, duration: floa
                 "zeInBytes": len(built["blob"]),
             },
             "tempBuffer": {
-                "BufferId": "1",
+                # unique across the file (colliding ids crash the converter)
+                "BufferId": str(_next_buffer_id(anims_doc)),
                 "Flags": 0,
                 "Bytes": base64.b64encode(built["blob"]).decode("ascii"),
             },
