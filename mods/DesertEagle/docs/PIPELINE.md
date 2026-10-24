@@ -84,6 +84,39 @@ recalcular à mão as `boneRigMatrices` do osso no `.mesh`.
 
 ## 5. WolvenKit — injetar de volta
 
+### Rota JSON↔CR2W (automática, descoberta e verificada)
+
+O `wolvenkit-cli` faz **CR2W ⇄ JSON** nos dois sentidos (`convert serialize` /
+`convert deserialize`), o que permite autorar os ficheiros do item **em código**:
+
+| Ficheiro | Método | Estado |
+| --- | --- | --- |
+| `factory.csv` (entity factory) | JSON → `convert deserialize` | ✅ verificado (ida-e-volta) |
+| `localization/*.json` | idem | ✅ método |
+| `desert_eagle.app` | Nue `.app` → JSON → `scripts/build_app_json.py` → CR2W | ✅ **compilado** (5,7 KB) |
+| `desert_eagle.ent` | Nue `.ent` → JSON → idem → CR2W | ✅ **compilado** (3,7 KB) |
+| `.archive` | `wolvenkit-cli pack` sobre a pasta montada | pronto a correr |
+| `.mesh` (geometria) | GLB → `.mesh` | ❌ requer GUI WolvenKit **ou** redMod |
+| `.anims` | `.re` → `.anims` | ❌ requer GUI WolvenKit **ou** redMod |
+
+O transformador `scripts/build_app_json.py` aplica as regras deste §5 sobre o
+`.app`/`.ent` extraídos: mantém **1** aparência (`desert_eagle`, regra do
+dry-run), tag `DesertEagleDefault`, `entSkinnedMeshComponent` do corpo apontado
+para `desert_eagle\items\w_handgun_desert_eagle.mesh`, meshes de peças vanilla
+removidas, `resolvedDependencies` limpo e `baseEntity` apontado para o nosso
+`desert_eagle\items\desert_eagle.ent` (regra do Modo Fotografia).
+
+**Armadilhas apanhadas:**
+- `ResourcePath` **tem de ficar com `$storage: string`** — valores `uint64`
+  (só hash) rebentam com `NotResolvableException` no `convert deserialize`.
+- O `-o` do `convert` exige diretório **existente**.
+- O `convert deserialize` só processa ficheiros `*.json` (o nome deve manter o
+  sufixo original: `desert_eagle.app.json` → `desert_eagle.app`).
+- O `baseEntity` da Nue vem **vazio** (`0`) — é o nosso `.app` que aponta para o
+  `.ent` (o passo do Modo Fotografia).
+
+### Passos no WolvenKit GUI (quando autorizado)
+
 1. Importar o `.glb` por cima do `.mesh` base (o `.mesh` é o contentor; o
    WolvenKit não cria `.mesh` do zero).
 2. *Custompath* da entidade: copiar `mesh_entity.ent` para a pasta do projeto,
