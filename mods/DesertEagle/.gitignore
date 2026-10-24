@@ -32,6 +32,10 @@ __pycache__/
 # `wolvenkit-cli convert serialize`); ficam só os resumos pequenos
 # (nue_bones.txt, nue_rig.json, provenance.txt).
 assets/_inventory/rig_json/
+assets/_inventory/app_json/
+assets/_inventory/mesh_json/
+assets/_inventory/xbm_json/
+assets/extracted_textures/
 
 # Material de trabalho/entregável da animação (clips .mp4, stills .png
 # grandes, .gif) — fica na worktree, nunca versionado. Colocado DEPOIS de
