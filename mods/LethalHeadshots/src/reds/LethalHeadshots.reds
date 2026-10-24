@@ -4,147 +4,149 @@
  * Kill: DamageSystem.ProcessLocalizedDamage is wrapped (the same place where
  * the vanilla game decides that a hit was a headshot). When the hit qualifies
  * the mod marks it with hitFlag.Kill AND calls ScriptedPuppet.Kill() on the
- * spot — the game's own force-kill — so the target dies no matter what the
- * rest of the pipeline does with the flag.
+ * spot — the game's own force-kill.
  *
- * Label: a DelayCallback ticker polls the aim every ~0.12 s (the engine's aim
- * projection never fires reliably) and drives a three-channel overlay, so a
- * missing label can be diagnosed exactly:
- *   1. crosshair tint  — white (nothing) / orange (target under the crosshair)
- *                        / red (over a killable head). Lives OUTSIDE the
- *                        custom-widget layer: if this works, the ticker works.
- *   2. probe bars      — blue bar = a target is under the crosshair,
- *                        red bar = over the head (DebugProbes in Config).
- *   3. "QUE OTA" text  — the actual label, inkText with a font family that is
- *                        proven to exist in this game install (arame, found
- *                        in tweakdb.bin; orbitron was never verified locally).
+ * Label ("QUE OTA"): driven by the game's own CROSSHAIR STATE CHANGES and by
+ * PlayerPuppet.OnAction — the callbacks the logging session proved to fire
+ * reliably. It does NOT use a DelayCallback ticker (proved dead: zero ticks
+ * ever fired) nor GetGameInstance() inside UI callbacks (proved null there).
+ * The player is cached from OnPlayerAttach's parameter and resolved through
+ * GameInstance.GetPlayerSystem().GetLocalPlayerMainGameObject() as fallback —
+ * both proven patterns from the game's own code.
  *
- * The widgets live in gameuiCrosshairContainerController's widget tree; the
- * player only carries a bridge plus the running ticker, re-established on
- * every OnPlayerAttach.
+ * Head test: the crosshair ray (GetDefaultCrosshairData) against the target's
+ * "Head" slot — the same slot the game's AI aims at. The aim queries
+ * (GetObjectClosestToCrosshair / GetTrackedTargetObject / GetLookAtObject)
+ * were proven to find targets in game (LogSentry aim_probe found=CAB).
  */
 
 module LethalHeadshots
 
 import LethalHeadshots.Config.*
 
-// Bridge to the live crosshair HUD controller, re-established on every
-// OnInitialize / OnPlayerAttach so it survives loading screens and respawns.
-@addField(PlayerPuppet)
-public let m_lhCrosshair: wref<gameuiCrosshairContainerController>;
+// Player cached on attach (UI callbacks cannot see the player through
+// GetGameInstance() — the logging session proved it).
+@addField(gameuiCrosshairBaseGameController)
+public let m_lhPlayer: wref<PlayerPuppet>;
 
-// The running aim ticker (strong ref so it outlives the delay system's hold).
+// Bridge back to the active crosshair controller, for out-of-UI drivers.
 @addField(PlayerPuppet)
-public let m_lhTicker: ref<LhAimTicker>;
+public let m_lhCrosshairBase: wref<gameuiCrosshairBaseGameController>;
 
-// Overlay widgets, created lazily inside the controller's widget tree.
-@addField(gameuiCrosshairContainerController)
+// Throttle for the per-input driver.
+@addField(PlayerPuppet)
+public let m_lhLastPoll: Float;
+
+// Overlay widgets + state, owned by the ACTIVE crosshair controller.
+@addField(gameuiCrosshairBaseGameController)
 public let m_lhText: ref<inkText>;
 
-@addField(gameuiCrosshairContainerController)
+@addField(gameuiCrosshairBaseGameController)
 public let m_lhProbeTarget: ref<inkRectangle>;
 
-@addField(gameuiCrosshairContainerController)
+@addField(gameuiCrosshairBaseGameController)
 public let m_lhProbeHead: ref<inkRectangle>;
 
-// Overlay state, owned by the controller so ANY driver (the ticker, the
-// crosshair state changes, the kill path) can run the same poll logic.
-@addField(gameuiCrosshairContainerController)
+@addField(gameuiCrosshairBaseGameController)
 public let m_lhOverHead: Bool;
 
-@addField(gameuiCrosshairContainerController)
+@addField(gameuiCrosshairBaseGameController)
 public let m_lhTargetSeen: Bool;
 
-@addField(gameuiCrosshairContainerController)
+@addField(gameuiCrosshairBaseGameController)
 public let m_lhMsgTicks: Int32;
 
-@addField(gameuiCrosshairContainerController)
-public let m_lhTicks: Int32;
-
 // ---------------------------------------------------------------------------
-// Aim ticker: polls the crosshair-over-head state and drives the overlay.
+// Player resolution — proven patterns only
 // ---------------------------------------------------------------------------
 
-public class LhAimTicker extends DelayCallback {
-
-  private let m_ctrl: wref<gameuiCrosshairContainerController>;
-  private let m_player: wref<PlayerPuppet>;
-  private let m_overHead: Bool;
-  private let m_targetSeen: Bool;
-  private let m_msgTicks: Int32;
-  private let m_ticks: Int32;
-  private let m_delayId: DelayID;
-
-  // Starts (or restarts) the ticker for a player/controller pair. A previous
-  // ticker is retired (refs cleared + callback cancelled) instead of reused,
-  // so no double schedules can stack — the pattern used by published mods.
-  public final static func Start(player: ref<PlayerPuppet>, ctrl: ref<gameuiCrosshairContainerController>) -> Void {
-    if !IsDefined(player) || !IsDefined(ctrl) {
-      return;
-    };
-
-    if IsDefined(player.m_lhTicker) {
-      let old: ref<LhAimTicker> = player.m_lhTicker;
-      old.m_ctrl = null;
-      old.m_player = null;
-      let delaySystem: ref<DelaySystem> = GameInstance.GetDelaySystem(GetGameInstance());
-      if IsDefined(delaySystem) && NotEquals(old.m_delayId, GetInvalidDelayID()) {
-        delaySystem.CancelCallback(old.m_delayId);
-      };
-    };
-
-    let ticker: ref<LhAimTicker> = new LhAimTicker();
-    ticker.m_ctrl = ctrl;
-    ticker.m_player = player;
-    player.m_lhTicker = ticker;
-    ticker.Schedule();
-
-    // Life proof: the ticker started (visible without aiming at anything).
-    // NOTE: the wording must NOT contain "QUE OTA" — that label is reserved
-    // for the head case only, so the startup proof is unmistakable.
-    if DebugProbes() {
-      FTLog("LethalHeadshots: ticker iniciado");
-      PushQueOtaMessage(player, "TICKER ATIVO");
-    };
-  }
-
-  private final func Schedule() -> Void {
-    let delaySystem: ref<DelaySystem> = GameInstance.GetDelaySystem(GetGameInstance());
-    if IsDefined(delaySystem) {
-      if NotEquals(this.m_delayId, GetInvalidDelayID()) {
-        delaySystem.CancelCallback(this.m_delayId);
-      };
-      this.m_delayId = delaySystem.DelayCallback(this, 0.12, false);
-    };
-  }
-
-  public func Call() -> Void {
-    // Re-arm FIRST: if any logic below throws at runtime, the chain must not
-    // die silently (a dead ticker explains every channel being dark).
-    this.Schedule();
-
-    // The HUD or the player is gone (loading screen, despawn): stop ticking.
-    if !IsDefined(this.m_ctrl) || !IsDefined(this.m_player) {
-      return;
-    };
-
-    // FIRST-TICK PROOF, before any query: if this message never appears, the
-    // DelayCallback chain itself is not running.
-    if DebugProbes() {
-      this.m_ctrl.m_lhTicks += 1;
-      if this.m_ctrl.m_lhTicks == 1 {
-        FTLog("LethalHeadshots: primeiro tick do ticker");
-        PushQueOtaMessage(this.m_player, "MIRA PRONTA");
-      };
-    };
-
-    this.m_ctrl.LhPoll(this.m_player);
-  }
+func LhResolvePlayer() -> ref<PlayerPuppet> {
+  let player: ref<PlayerPuppet> = GameInstance.GetPlayerSystem(GetGameInstance()).GetLocalPlayerMainGameObject() as PlayerPuppet;
+  if IsDefined(player) {
+    return player;
+  };
+  return GetPlayer(GetGameInstance());
 }
 
-// The whole per-aim poll: target query, proofs, overlay. Owned by the
-// controller so it can be driven by the ticker AND by crosshair state changes.
-@addMethod(gameuiCrosshairContainerController)
+// ---------------------------------------------------------------------------
+// Drivers — only callbacks proven to fire in game
+// ---------------------------------------------------------------------------
+
+// The main driver: the game calls this on every crosshair state change
+// (weapon ready, hip fire, aim, reload...) — literally "every time you aim".
+@wrapMethod(gameuiCrosshairBaseGameController)
+protected func OnCrosshairStateChange(oldState: gamePSMCrosshairStates, newState: gamePSMCrosshairStates) -> Void {
+  wrappedMethod(oldState, newState);
+  if !IsDefined(this.m_lhPlayer) {
+    this.m_lhPlayer = LhResolvePlayer();
+    if IsDefined(this.m_lhPlayer) {
+      this.m_lhPlayer.m_lhCrosshairBase = this;
+    };
+  };
+  if IsDefined(this.m_lhPlayer) {
+    this.LhPoll(this.m_lhPlayer);
+  };
+}
+
+// The player is given to us here as a parameter — the only source that does
+// not depend on any global.
+@wrapMethod(gameuiCrosshairBaseGameController)
+protected cb func OnPlayerAttach(playerPuppet: ref<GameObject>) -> Bool {
+  let ret: Bool = wrappedMethod(playerPuppet);
+  this.m_lhPlayer = playerPuppet as PlayerPuppet;
+  if IsDefined(this.m_lhPlayer) {
+    this.m_lhPlayer.m_lhCrosshairBase = this;
+    this.LhPoll(this.m_lhPlayer);
+  };
+  return ret;
+}
+
+// Continuous driver: input actions fire constantly while the player moves the
+// mouse/aims — throttled to ~8 polls/second.
+@wrapMethod(PlayerPuppet)
+protected cb func OnAction(action: ListenerAction, consumer: ListenerActionConsumer) -> Bool {
+  let ret: Bool = wrappedMethod(action, consumer);
+  let now: Float = EngineTime.ToFloat(GameInstance.GetEngineTime(this.GetGame()));
+  if now - this.m_lhLastPoll > 0.12 {
+    this.m_lhLastPoll = now;
+    if IsDefined(this.m_lhCrosshairBase) {
+      this.m_lhCrosshairBase.LhPoll(this);
+    };
+  };
+  return ret;
+}
+
+// Extra driver on a proven-hot path (every real hit).
+@wrapMethod(DamageSystem)
+private final func ProcessLocalizedDamage(hitEvent: ref<gameHitEvent>) -> Void {
+  wrappedMethod(hitEvent);
+
+  if hitEvent.projectionPipeline {
+    return;
+  };
+
+  if IsLethalHeadshot(hitEvent) {
+    // Flag for the engine's own instant-kill pass...
+    hitEvent.attackData.AddFlag(hitFlag.Kill, n"LethalHeadshots");
+
+    // ...and the brute call: kill the puppet right now, no matter what.
+    let target: ref<ScriptedPuppet> = hitEvent.target as ScriptedPuppet;
+    if IsDefined(target) {
+      target.Kill(hitEvent.attackData.GetInstigator());
+    };
+  };
+
+  let shooter: ref<PlayerPuppet> = hitEvent.attackData.GetInstigator() as PlayerPuppet;
+  if IsDefined(shooter) && IsDefined(shooter.m_lhCrosshairBase) {
+    shooter.m_lhCrosshairBase.LhPoll(shooter);
+  };
+}
+
+// ---------------------------------------------------------------------------
+// The per-aim poll
+// ---------------------------------------------------------------------------
+
+@addMethod(gameuiCrosshairBaseGameController)
 public final func LhPoll(player: ref<PlayerPuppet>) -> Void {
   if !IsDefined(player) {
     return;
@@ -154,8 +156,8 @@ public final func LhPoll(player: ref<PlayerPuppet>) -> Void {
   let overHead: Bool = IsCrosshairOnHead(player, targetSeen);
   let risingEdge: Bool = overHead && NotEquals(overHead, this.m_lhOverHead);
 
-  // Proofs FIRST (cheap and safe): they must keep working even if the widget
-  // work at the end of the poll throws at runtime.
+  // Proofs first (cheap and safe): they must keep working even if the widget
+  // work below throws at runtime.
   if DebugProbes() {
     if targetSeen && NotEquals(targetSeen, this.m_lhTargetSeen) {
       PushQueOtaMessage(player, "ALVO SOB A MIRA");
@@ -178,20 +180,16 @@ public final func LhPoll(player: ref<PlayerPuppet>) -> Void {
     };
   };
 
-  // Overlay LAST — the risky part. `fresh` rebuilds the widget tree from
-  // scratch on every rising edge, so a widget the game detached (weapon
-  // swap, holster, scene change) can never block the label again.
   this.LhUpdateOverlay(targetSeen, overHead, risingEdge);
   this.m_lhOverHead = overHead;
-
-  if DebugProbes() && risingEdge {
-    FTLog("LethalHeadshots: cabeca sob a mira");
-  };
 }
 
 // Vanilla HUD message through the UI_Notifications blackboard — the same path
 // the game itself uses for warning messages (see player.SetWarningMessage).
 func PushQueOtaMessage(player: ref<PlayerPuppet>, text: String) -> Void {
+  if !IsDefined(player) {
+    return;
+  };
   let msg: SimpleScreenMessage;
   msg.isShown = true;
   msg.duration = 2.50;
@@ -201,184 +199,32 @@ func PushQueOtaMessage(player: ref<PlayerPuppet>, text: String) -> Void {
 }
 
 // ---------------------------------------------------------------------------
-// HUD overlay (tint + probe bars + "QUE OTA" text)
-// ---------------------------------------------------------------------------
-
-@wrapMethod(gameuiCrosshairContainerController)
-protected cb func OnInitialize() -> Bool {
-  let ret: Bool = wrappedMethod();
-  this.m_lhText = null;
-  this.m_lhProbeTarget = null;
-  this.m_lhProbeHead = null;
-  let player: ref<PlayerPuppet> = GetPlayer(GetGameInstance());
-  if IsDefined(player) {
-    player.m_lhCrosshair = this;
-    LhAimTicker.Start(player, this);
-  };
-  return ret;
-}
-
-// The reliable bridge point: OnPlayerAttach receives the player as a parameter,
-// so it does not depend on GetPlayer() being ready when the HUD initializes.
-@wrapMethod(gameuiCrosshairContainerController)
-protected cb func OnPlayerAttach(playerGameObject: ref<GameObject>) -> Bool {
-  let ret: Bool = wrappedMethod(playerGameObject);
-  this.m_lhText = null;
-  this.m_lhProbeTarget = null;
-  this.m_lhProbeHead = null;
-  let player: ref<PlayerPuppet> = playerGameObject as PlayerPuppet;
-  if IsDefined(player) {
-    player.m_lhCrosshair = this;
-    LhAimTicker.Start(player, this);
-  };
-  return ret;
-}
-
-// Second driver, independent of the DelayCallback ticker: the game calls this
-// on every crosshair state change (weapon ready, aim start/stop) — exactly
-// "every time the player aims". If the ticker chain ever fails, this still
-// refreshes the label on each aim.
-@wrapMethod(gameuiCrosshairBaseGameController)
-protected func OnCrosshairStateChange(oldState: gamePSMCrosshairStates, newState: gamePSMCrosshairStates) -> Void {
-  wrappedMethod(oldState, newState);
-  let player: ref<PlayerPuppet> = GetPlayer(GetGameInstance());
-  if IsDefined(player) && IsDefined(player.m_lhCrosshair) {
-    player.m_lhCrosshair.LhPoll(player);
-  };
-}
-
-// Called every tick: refreshes all three channels. `fresh` rebuilds the
-// overlay widgets from scratch — the game can detach them from the tree on
-// weapon swap/holster/scene changes, and a stale ref would keep driving a dead
-// widget forever (which is why the label used to work only once).
-@addMethod(gameuiCrosshairContainerController)
-public final func LhUpdateOverlay(targetSeen: Bool, overHead: Bool, fresh: Bool) -> Void {
-  let root: wref<inkCompoundWidget> = this.GetRootCompoundWidget();
-  if !IsDefined(root) {
-    return;
-  };
-
-  if fresh || !IsDefined(this.m_lhText) {
-    this.m_lhText = null;
-    this.m_lhProbeTarget = null;
-    this.m_lhProbeHead = null;
-    this.LhCreateOverlayWidgets(root);
-  };
-
-  // Channel 1 — crosshair tint. If this changes colour in game, the ticker and
-  // the head detection work, and any remaining problem is widget rendering.
-  let tint: HDRColor;
-  if overHead {
-    tint = new HDRColor(1.00, 0.10, 0.10, 1.00);
-  } else {
-    if targetSeen {
-      tint = new HDRColor(1.00, 0.65, 0.10, 1.00);
-    } else {
-      tint = new HDRColor(1.00, 1.00, 1.00, 1.00);
-    };
-  };
-  root.SetTintColor(tint);
-
-  // Channels 2 and 3 — probe bars (debug) and the actual label.
-  if IsDefined(this.m_lhProbeTarget) {
-    this.m_lhProbeTarget.SetVisible(DebugProbes() && targetSeen);
-  };
-  if IsDefined(this.m_lhProbeHead) {
-    this.m_lhProbeHead.SetVisible(DebugProbes() && overHead);
-  };
-  if IsDefined(this.m_lhText) {
-    if overHead {
-      // Re-assert the text on every show: the NativeDB notes that font-related
-      // changes need a SetText/SetFontSize call to force a redraw.
-      this.m_lhText.SetText("QUE OTA");
-    };
-    this.m_lhText.SetVisible(overHead);
-  };
-}
-
-@addMethod(gameuiCrosshairContainerController)
-private final func LhCreateOverlayWidgets(root: wref<inkCompoundWidget>) -> Void {
-  // Probe bar: a target is under the crosshair (no font involved).
-  let probeTarget: ref<inkRectangle> = new inkRectangle();
-  probeTarget.SetName(n"LhProbeTarget");
-  probeTarget.SetFitToContent(false);
-  probeTarget.SetSize(28.00, 28.00);
-  probeTarget.SetAnchor(inkEAnchor.Centered);
-  probeTarget.SetAnchorPoint(0.50, 0.50);
-  probeTarget.SetTranslation(0.00, -140.00);
-  probeTarget.SetTintColor(new HDRColor(0.10, 0.45, 1.00, 1.00));
-  probeTarget.SetVisible(false);
-  probeTarget.Reparent(root);
-  this.m_lhProbeTarget = probeTarget;
-
-  // Probe bar: over a killable head (no font involved).
-  let probeHead: ref<inkRectangle> = new inkRectangle();
-  probeHead.SetName(n"LhProbeHead");
-  probeHead.SetFitToContent(false);
-  probeHead.SetSize(260.00, 12.00);
-  probeHead.SetAnchor(inkEAnchor.Centered);
-  probeHead.SetAnchorPoint(0.50, 0.50);
-  probeHead.SetTranslation(0.00, -100.00);
-  probeHead.SetTintColor(new HDRColor(1.00, 0.10, 0.10, 1.00));
-  probeHead.SetVisible(false);
-  probeHead.Reparent(root);
-  this.m_lhProbeHead = probeHead;
-
-  // The label itself. Order matters: font family/style first, then size, then
-  // SetText LAST — the NativeDB notes that font changes do not redraw a widget
-  // unless SetText/SetFontSize runs afterwards. `raj` with `Medium` is the
-  // game's own default font as used by the official wiki's inkText example.
-  let text: ref<inkText> = new inkText();
-  text.SetName(n"LethalHeadshotsQueOta");
-  // Canonical pattern from the wiki's working HUD example: font family+style
-  // in one call, then size, then SetText, then Reparent LAST.
-  text.SetFontFamily("base\\gameplay\\gui\\fonts\\raj\\raj.inkfontfamily", n"Medium");
-  text.SetFontSize(44);
-  // Documented inkText setup: explicit margin + wrapping + fit-to-content, all
-  // BEFORE Reparent, so the draw area can never end up with zero size.
-  text.SetMargin(0.00, 0.00, 0.00, 0.00);
-  text.SetWrapping(true, 700.00);
-  text.SetFitToContent(true);
-  text.SetText("QUE OTA");
-  text.SetOpacity(1.00);
-  text.SetAnchor(inkEAnchor.Centered);
-  text.SetAnchorPoint(0.50, 0.50);
-  text.SetTranslation(0.00, -58.00);
-  text.SetTintColor(new HDRColor(1.00, 0.10, 0.10, 1.00));
-  text.SetVisible(false);
-  text.Reparent(root);
-  this.m_lhText = text;
-}
-
-// ---------------------------------------------------------------------------
 // Aim geometry: is the crosshair over the target's head?
 // ---------------------------------------------------------------------------
 
-// Uses the game's own CROSSHAIR APIs (GetTrackedTargetObject /
-// GetObjectClosestToCrosshair + GetDefaultCrosshairData), not the scanner's
-// GetLookAtObject — that one goes quiet during combat, which is why the label
-// only ever showed its startup message. The head test is pure geometry: the
-// perpendicular distance from the crosshair RAY to the target's "Head" slot
-// (the same slot the game's own AI aims at) — pose independent.
+// The aim queries were proven to find targets in game (aim_probe found=CAB).
+// The head test is pure geometry: the perpendicular distance from the
+// crosshair RAY to the target's "Head" slot — pose independent.
 func IsCrosshairOnHead(player: ref<PlayerPuppet>, out targetSeen: Bool) -> Bool {
   targetSeen = false;
 
-  let targetingSystem: ref<TargetingSystem> = GameInstance.GetTargetingSystem(player.GetGame());
+  let game: GameInstance = player.GetGame();
+  let targetingSystem: ref<TargetingSystem> = GameInstance.GetTargetingSystem(game);
   if !IsDefined(targetingSystem) {
     return false;
   };
 
-  // 1) The aim-assist tracked target; 2) the object closest to the crosshair;
-  // 3) the scanner look-at as a last resort.
-  let target: ref<ScriptedPuppet> = targetingSystem.GetTrackedTargetObject(player) as ScriptedPuppet;
+  // 1) closest-to-crosshair (proven), 2) aim-assist tracked target,
+  // 3) scanner look-at as a last resort.
+  let query: TargetSearchQuery;
+  query.testedSet = TargetingSet.Visible;
+  query.ignoreInstigator = true;
+  query.filterObjectByDistance = true;
+  query.maxDistance = 300.00;
+  let angleDistance: EulerAngles;
+  let target: ref<ScriptedPuppet> = targetingSystem.GetObjectClosestToCrosshair(player, angleDistance, query) as ScriptedPuppet;
   if !IsDefined(target) {
-    let query: TargetSearchQuery;
-    query.testedSet = TargetingSet.Visible;
-    query.ignoreInstigator = true;
-    query.filterObjectByDistance = true;
-    query.maxDistance = 300.00;
-    let angleDistance: EulerAngles;
-    target = targetingSystem.GetObjectClosestToCrosshair(player, angleDistance, query) as ScriptedPuppet;
+    target = targetingSystem.GetTrackedTargetObject(player) as ScriptedPuppet;
   };
   if !IsDefined(target) {
     target = targetingSystem.GetLookAtObject(player, true, true) as ScriptedPuppet;
@@ -397,7 +243,6 @@ func IsCrosshairOnHead(player: ref<PlayerPuppet>, out targetSeen: Bool) -> Bool 
     return false;
   };
 
-  // The crosshair ray: origin + forward.
   let rayPos: Vector4;
   let rayFwd: Vector4;
   targetingSystem.GetDefaultCrosshairData(player, rayPos, rayFwd);
@@ -410,47 +255,113 @@ func IsCrosshairOnHead(player: ref<PlayerPuppet>, out targetSeen: Bool) -> Bool 
     if along <= 0.50 || along > 300.00 {
       return false;
     };
-    // |toHead x fwd| is the perpendicular distance to the ray (fwd normalized).
     let perp: Vector4 = Vector4.Cross(toHead, fwd);
     return Vector4.LengthSquared(perp) < 0.25;
   };
 
-  // No Head slot: assume a standing humanoid and use the height above the root.
   let rootPos: Vector4 = target.GetWorldPosition();
   return rayPos.Z - rootPos.Z > 1.20;
 }
 
 // ---------------------------------------------------------------------------
-// Kill pipeline
+// Overlay widgets (tint + probe bars + "QUE OTA" text)
 // ---------------------------------------------------------------------------
 
-@wrapMethod(DamageSystem)
-private final func ProcessLocalizedDamage(hitEvent: ref<gameHitEvent>) -> Void {
-  wrappedMethod(hitEvent);
-
-  // The projection pipeline runs when the player merely aims: never kill on it.
-  if hitEvent.projectionPipeline {
+// `fresh` rebuilds the widgets from scratch on every rising edge, so a widget
+// the game detached (weapon swap, holster, scene change) can never block the
+// label again.
+@addMethod(gameuiCrosshairBaseGameController)
+public final func LhUpdateOverlay(targetSeen: Bool, overHead: Bool, fresh: Bool) -> Void {
+  let root: wref<inkCompoundWidget> = this.GetRootCompoundWidget();
+  if !IsDefined(root) {
     return;
   };
 
-  if IsLethalHeadshot(hitEvent) {
-    // Flag for the engine's own instant-kill pass...
-    hitEvent.attackData.AddFlag(hitFlag.Kill, n"LethalHeadshots");
+  if fresh || !IsDefined(this.m_lhText) {
+    this.m_lhText = null;
+    this.m_lhProbeTarget = null;
+    this.m_lhProbeHead = null;
+    this.LhCreateOverlayWidgets(root);
+  };
 
-    // ...and the brute call: kill the puppet right now, no matter what.
-    let target: ref<ScriptedPuppet> = hitEvent.target as ScriptedPuppet;
-    if IsDefined(target) {
-      target.Kill(hitEvent.attackData.GetInstigator());
-    };
-
-    // Self-heal: this path is proven alive in game (headshots kill), so it also
-    // revives the aim ticker whenever its chain is missing.
-    let shooter: ref<PlayerPuppet> = hitEvent.attackData.GetInstigator() as PlayerPuppet;
-    if IsDefined(shooter) && IsDefined(shooter.m_lhCrosshair) && !IsDefined(shooter.m_lhTicker) {
-      LhAimTicker.Start(shooter, shooter.m_lhCrosshair);
+  let tint: HDRColor;
+  if overHead {
+    tint = new HDRColor(1.00, 0.10, 0.10, 1.00);
+  } else {
+    if targetSeen {
+      tint = new HDRColor(1.00, 0.65, 0.10, 1.00);
+    } else {
+      tint = new HDRColor(1.00, 1.00, 1.00, 1.00);
     };
   };
+  root.SetTintColor(tint);
+
+  if IsDefined(this.m_lhProbeTarget) {
+    this.m_lhProbeTarget.SetVisible(DebugProbes() && targetSeen);
+  };
+  if IsDefined(this.m_lhProbeHead) {
+    this.m_lhProbeHead.SetVisible(DebugProbes() && overHead);
+  };
+  if IsDefined(this.m_lhText) {
+    if overHead {
+      // Re-assert the text on every show: font changes do not redraw without
+      // a later SetText/SetFontSize (NativeDB).
+      this.m_lhText.SetText("QUE OTA");
+    };
+    this.m_lhText.SetVisible(overHead);
+  };
 }
+
+@addMethod(gameuiCrosshairBaseGameController)
+private final func LhCreateOverlayWidgets(root: wref<inkCompoundWidget>) -> Void {
+  let probeTarget: ref<inkRectangle> = new inkRectangle();
+  probeTarget.SetName(n"LhProbeTarget");
+  probeTarget.SetFitToContent(false);
+  probeTarget.SetSize(28.00, 28.00);
+  probeTarget.SetAnchor(inkEAnchor.Centered);
+  probeTarget.SetAnchorPoint(0.50, 0.50);
+  probeTarget.SetTranslation(0.00, -140.00);
+  probeTarget.SetTintColor(new HDRColor(0.10, 0.45, 1.00, 1.00));
+  probeTarget.SetVisible(false);
+  probeTarget.Reparent(root);
+  this.m_lhProbeTarget = probeTarget;
+
+  let probeHead: ref<inkRectangle> = new inkRectangle();
+  probeHead.SetName(n"LhProbeHead");
+  probeHead.SetFitToContent(false);
+  probeHead.SetSize(260.00, 12.00);
+  probeHead.SetAnchor(inkEAnchor.Centered);
+  probeHead.SetAnchorPoint(0.50, 0.50);
+  probeHead.SetTranslation(0.00, -100.00);
+  probeHead.SetTintColor(new HDRColor(1.00, 0.10, 0.10, 1.00));
+  probeHead.SetVisible(false);
+  probeHead.Reparent(root);
+  this.m_lhProbeHead = probeHead;
+
+  // Canonical pattern from the wiki's working HUD example: font family+style
+  // in one call, then size, wrapping/margin/fit-to-content, SetText, and
+  // Reparent LAST.
+  let text: ref<inkText> = new inkText();
+  text.SetName(n"LethalHeadshotsQueOta");
+  text.SetFontFamily("base\\gameplay\\gui\\fonts\\raj\\raj.inkfontfamily", n"Medium");
+  text.SetFontSize(44);
+  text.SetMargin(0.00, 0.00, 0.00, 0.00);
+  text.SetWrapping(true, 700.00);
+  text.SetFitToContent(true);
+  text.SetText("QUE OTA");
+  text.SetOpacity(1.00);
+  text.SetAnchor(inkEAnchor.Centered);
+  text.SetAnchorPoint(0.50, 0.50);
+  text.SetTranslation(0.00, -58.00);
+  text.SetTintColor(new HDRColor(1.00, 0.10, 0.10, 1.00));
+  text.SetVisible(false);
+  text.Reparent(root);
+  this.m_lhText = text;
+}
+
+// ---------------------------------------------------------------------------
+// Kill pipeline
+// ---------------------------------------------------------------------------
 
 /*
  * A hit is lethal when all of the following are true:
@@ -512,7 +423,7 @@ func ShouldSpare(target: ref<ScriptedPuppet>) -> Bool {
   };
 
   if SpareAllies() {
-    let player: ref<PlayerPuppet> = GetPlayer(target.GetGame());
+    let player: ref<PlayerPuppet> = LhResolvePlayer();
     if IsDefined(player) && Equals(target.GetAttitudeTowards(player), EAIAttitude.AIA_Friendly) {
       return true;
     };
