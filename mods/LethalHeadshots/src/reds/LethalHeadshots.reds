@@ -56,6 +56,7 @@ public class LhAimTicker extends DelayCallback {
   private let m_ctrl: wref<gameuiCrosshairContainerController>;
   private let m_player: wref<PlayerPuppet>;
   private let m_overHead: Bool;
+  private let m_targetSeen: Bool;
   private let m_msgTicks: Int32;
   private let m_delayId: DelayID;
 
@@ -82,6 +83,11 @@ public class LhAimTicker extends DelayCallback {
     ticker.m_player = player;
     player.m_lhTicker = ticker;
     ticker.Schedule();
+
+    // Life proof: the ticker started (visible without aiming at anything).
+    if DebugProbes() {
+      PushQueOtaMessage(player, "QUE OTA · ticker ativo");
+    };
   }
 
   private final func Schedule() -> Void {
@@ -95,6 +101,10 @@ public class LhAimTicker extends DelayCallback {
   }
 
   public func Call() -> Void {
+    // Re-arm FIRST: if any logic below throws at runtime, the chain must not
+    // die silently (a dead ticker explains every channel being dark).
+    this.Schedule();
+
     // The HUD or the player is gone (loading screen, despawn): stop ticking.
     if !IsDefined(this.m_ctrl) || !IsDefined(this.m_player) {
       return;
@@ -104,34 +114,39 @@ public class LhAimTicker extends DelayCallback {
     let overHead: Bool = IsCrosshairOnHead(this.m_player, targetSeen);
     this.m_ctrl.LhUpdateOverlay(targetSeen, overHead);
 
-    // Channel 4 — the game's own HUD warning message. It is rendered by the
-    // vanilla WarningMessageGameController, so it is visible even when every
-    // custom widget fails. Refreshed every ~2 s while over a head.
+    // Life proofs (DebugProbes): edge-triggered HUD messages, so "nothing at
+    // all" can be told apart from "ticker dead" vs "aim query empty".
+    if DebugProbes() {
+      if targetSeen && NotEquals(targetSeen, this.m_targetSeen) {
+        PushQueOtaMessage(this.m_player, "QUE OTA · alvo sob a mira");
+      };
+      this.m_targetSeen = targetSeen;
+    };
+
+    // Vanilla HUD message: refreshed every ~2 s while over a head.
     if DebugProbes() && overHead {
       if NotEquals(overHead, this.m_overHead) {
         this.m_msgTicks = 0;
-        PushQueOtaMessage(this.m_player);
+        PushQueOtaMessage(this.m_player, "QUE OTA");
       } else {
         this.m_msgTicks += 1;
         if this.m_msgTicks >= 16 {
           this.m_msgTicks = 0;
-          PushQueOtaMessage(this.m_player);
+          PushQueOtaMessage(this.m_player, "QUE OTA");
         };
       };
     };
     this.m_overHead = overHead;
-
-    this.Schedule();
   }
 }
 
 // Vanilla HUD message through the UI_Notifications blackboard — the same path
 // the game itself uses for warning messages (see player.SetWarningMessage).
-func PushQueOtaMessage(player: ref<PlayerPuppet>) -> Void {
+func PushQueOtaMessage(player: ref<PlayerPuppet>, text: String) -> Void {
   let msg: SimpleScreenMessage;
   msg.isShown = true;
-  msg.duration = 2.00;
-  msg.message = "QUE OTA";
+  msg.duration = 2.50;
+  msg.message = text;
   msg.type = SimpleMessageType.Neutral;
   GameInstance.GetBlackboardSystem(player.GetGame()).Get(GetAllBlackboardDefs().UI_Notifications).SetVariant(GetAllBlackboardDefs().UI_Notifications.WarningMessage, ToVariant(msg), true);
 }
@@ -333,6 +348,13 @@ private final func ProcessLocalizedDamage(hitEvent: ref<gameHitEvent>) -> Void {
     let target: ref<ScriptedPuppet> = hitEvent.target as ScriptedPuppet;
     if IsDefined(target) {
       target.Kill(hitEvent.attackData.GetInstigator());
+    };
+
+    // Self-heal: this path is proven alive in game (headshots kill), so it also
+    // revives the aim ticker whenever its chain is missing.
+    let shooter: ref<PlayerPuppet> = hitEvent.attackData.GetInstigator() as PlayerPuppet;
+    if IsDefined(shooter) && IsDefined(shooter.m_lhCrosshair) && !IsDefined(shooter.m_lhTicker) {
+      LhAimTicker.Start(shooter, shooter.m_lhCrosshair);
     };
   };
 }
