@@ -52,6 +52,44 @@ func LhResolvePlayer() -> ref<PlayerPuppet> {
 }
 
 // ---------------------------------------------------------------------------
+// The continuous driver — TimeSystem.RegisterDelayedListener, repeat = -1
+// (the game's own pattern from gameTimePrereq/vehicleComponent: an infinite
+// repeating timer in REAL seconds). This is what keeps the label honest:
+// it hides again within ~150 ms of the crosshair leaving the head, even when
+// the player only moves the mouse (which fires no input actions at all).
+// ---------------------------------------------------------------------------
+
+public class LhTickEvent extends Event {
+}
+
+@addField(PlayerPuppet)
+public let m_lhTickId: Uint32;
+
+func LhStartTicker(player: ref<PlayerPuppet>) -> Void {
+  if !IsDefined(player) {
+    return;
+  };
+  if player.m_lhTickId != 0u {
+    return;
+  };
+  let timeSystem: ref<TimeSystem> = GameInstance.GetTimeSystem(player.GetGame());
+  if !IsDefined(timeSystem) {
+    return;
+  };
+  let evt: ref<LhTickEvent> = new LhTickEvent();
+  player.m_lhTickId = timeSystem.RegisterDelayedListener(player, evt, timeSystem.RealTimeSecondsToGameTime(0.15), -1, false);
+}
+
+// The tick lands here: the event type binds the callback.
+@addMethod(PlayerPuppet)
+protected cb func OnLhTick(evt: ref<LhTickEvent>) -> Bool {
+  if IsDefined(this.m_lhCrosshairBase) {
+    this.m_lhCrosshairBase.LhPoll(this);
+  };
+  return true;
+}
+
+// ---------------------------------------------------------------------------
 // Drivers — only callbacks proven to fire in game
 // ---------------------------------------------------------------------------
 
@@ -66,6 +104,7 @@ protected func OnCrosshairStateChange(oldState: gamePSMCrosshairStates, newState
     };
   };
   if IsDefined(this.m_lhPlayer) {
+    LhStartTicker(this.m_lhPlayer);
     this.LhPoll(this.m_lhPlayer);
   };
 }
@@ -77,6 +116,7 @@ protected cb func OnPlayerAttach(playerPuppet: ref<GameObject>) -> Bool {
   this.m_lhPlayer = playerPuppet as PlayerPuppet;
   if IsDefined(this.m_lhPlayer) {
     this.m_lhPlayer.m_lhCrosshairBase = this;
+    LhStartTicker(this.m_lhPlayer);
     this.LhPoll(this.m_lhPlayer);
   };
   return ret;
