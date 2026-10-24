@@ -9,24 +9,26 @@ module LethalHeadshots.Config
 
 /*
  * Civilians (crowd NPCs, vendors, non-combat characters) survive a headshot.
- * Set to false if you want every headshot to kill, no matter who it hits.
+ * Default is false: every headshot kills, including civilians.
  */
 public func SpareCivilians() -> Bool {
-  return true;
+  return false;
 }
 
 /*
  * Friendly characters (allies, companions, quest contacts with a friendly
  * attitude towards V) survive a headshot.
+ * Default is false: every headshot kills, including allies.
  */
 public func SpareAllies() -> Bool {
-  return true;
+  return false;
 }
 
 /*
  * Targets protected by the game (god mode, scripted invulnerability, quest
- * NPCs that must not die) survive a headshot. Keep this on unless you know
- * exactly what you are doing: killing protected NPCs can break quests.
+ * NPCs that must not die) survive a headshot. This is the only exception left
+ * on purpose: one-shotting a quest-critical NPC can break a playthrough.
+ * Set to false only if you accept that risk.
  */
 public func SpareProtectedTargets() -> Bool {
   return true;

@@ -18,7 +18,7 @@ release pipeline.
 
 | Mod | Version | What it does |
 | --- | --- | --- |
-| [**Lethal Headshots**](mods/LethalHeadshots) | 1.0.1 | Every headshot kills instantly — no damage multipliers, no boss damage caps. Civilians, allies and quest-protected NPCs are spared by default. |
+| [**Lethal Headshots**](mods/LethalHeadshots) | 1.0.1 | Every headshot kills instantly — any NPC, civilians included. No damage multipliers, no boss damage caps; only god-mode/quest-protected targets are spared. |
 
 ## Requirements
 
@@ -95,4 +95,5 @@ Please do not report security issues in public. See [SECURITY.md](SECURITY.md).
 ## License
 
 MIT. See [LICENSE](LICENSE).
+
 
