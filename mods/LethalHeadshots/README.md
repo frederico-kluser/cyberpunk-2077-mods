@@ -163,5 +163,11 @@ pwsh -File tools/deploy.ps1 -Launch            # deploy and start the game
 See [docs/TESTING.md](../../docs/TESTING.md) for the full validation and manual
 test matrix.
 
+## Lessons learned
+
+Every failed attempt, why it failed, the inkText traps that make labels
+invisible, and the patterns that are known to work are recorded in
+[docs/LESSONS.md](docs/LESSONS.md) — read it before touching the HUD code.
+
 
 
