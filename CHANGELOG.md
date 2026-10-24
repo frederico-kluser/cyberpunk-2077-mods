@@ -14,6 +14,63 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.1.0] - 2026-10-24
 
 ### Features
+- **DesertEagle:** one-command release build orchestrator (#47) ([5f152b8](https://github.com/frederico-kluser/cyberpunk-2077-mods/commit/5f152b8))
+- **tools:** gate CET behind the -modded launch flag (#46) ([4c55c37](https://github.com/frederico-kluser/cyberpunk-2077-mods/commit/4c55c37))
+- **DesertEagle:** render the final textured model (#44) ([f85795a](https://github.com/frederico-kluser/cyberpunk-2077-mods/commit/f85795a))
+- **DesertEagle:** wire cs2 textures into the mesh material (#43) ([baca13a](https://github.com/frederico-kluser/cyberpunk-2077-mods/commit/baca13a))
+- **logsentry:** structured timestamped catalog with CET bridge (#42) ([4cf56f5](https://github.com/frederico-kluser/cyberpunk-2077-mods/commit/4cf56f5))
+- **DesertEagle:** build xbm textures from cs2 maps (#41) ([30c6862](https://github.com/frederico-kluser/cyberpunk-2077-mods/commit/30c6862))
+- **DesertEagle:** bcn texture codec with verified roundtrip (#40) ([e5ce64d](https://github.com/frederico-kluser/cyberpunk-2077-mods/commit/e5ce64d))
+- **DesertEagle:** decode the xbm texture format and extract cs2 maps (#39) ([5dccee3](https://github.com/frederico-kluser/cyberpunk-2077-mods/commit/5dccee3))
+- **logsentry:** capture engine events as a file catalog (#37) ([252ecad](https://github.com/frederico-kluser/cyberpunk-2077-mods/commit/252ecad))
+- **DesertEagle:** calibrate basestats and gate the game deploy (#34) ([10e19d7](https://github.com/frederico-kluser/cyberpunk-2077-mods/commit/10e19d7))
+- **DesertEagle:** pack the complete mod archive (#31) ([a601ab8](https://github.com/frederico-kluser/cyberpunk-2077-mods/commit/a601ab8))
+- **DesertEagle:** build the game mesh from blender geometry (#30) ([7b3a267](https://github.com/frederico-kluser/cyberpunk-2077-mods/commit/7b3a267))
+- **DesertEagle:** write mesh buffer from geometry json (#28) ([bc725f4](https://github.com/frederico-kluser/cyberpunk-2077-mods/commit/bc725f4))
+- **DesertEagle:** decode and verify mesh render buffer format (#25) ([d7ed688](https://github.com/frederico-kluser/cyberpunk-2077-mods/commit/d7ed688))
+- **DesertEagle:** author app and ent via CR2W json round-trip (#23) ([b826cc5](https://github.com/frederico-kluser/cyberpunk-2077-mods/commit/b826cc5))
+- **DesertEagle:** calibrate mag set anims and split export by set (#21) ([0c7e71f](https://github.com/frederico-kluser/cyberpunk-2077-mods/commit/0c7e71f))
+- **DesertEagle:** calibrated .re animsets from CS2 motion (#20) ([8600aa0](https://github.com/frederico-kluser/cyberpunk-2077-mods/commit/8600aa0))
+- **DesertEagle:** CS2 model retarget to Nue rig bones (#17) ([1875e78](https://github.com/frederico-kluser/cyberpunk-2077-mods/commit/1875e78))
+- **DesertEagle:** rig mapping to Nue bones, model provenance, renders (#16) ([4207691](https://github.com/frederico-kluser/cyberpunk-2077-mods/commit/4207691))
+- **lethalheadshots:** force-kill headshots and poll the aim label (#15) ([d4dae69](https://github.com/frederico-kluser/cyberpunk-2077-mods/commit/d4dae69))
+- **DesertEagle:** scaffold weapon mod and Blender pipeline (#13) ([1a6f999](https://github.com/frederico-kluser/cyberpunk-2077-mods/commit/1a6f999))
+- **lethalheadshots:** aim preview label and lethal defaults (#11) ([ad7b0ab](https://github.com/frederico-kluser/cyberpunk-2077-mods/commit/ad7b0ab))
+
+### Bug Fixes
+- **lethalheadshots:** drive the label from proven callbacks (#45) ([afe59a0](https://github.com/frederico-kluser/cyberpunk-2077-mods/commit/afe59a0))
+- **DesertEagle:** drop vanilla shadow and dependency references (#38) ([73daf25](https://github.com/frederico-kluser/cyberpunk-2077-mods/commit/73daf25))
+- **lethalheadshots:** drive the aim poll from crosshair state too (#35) ([eee4458](https://github.com/frederico-kluser/cyberpunk-2077-mods/commit/eee4458))
+- **DesertEagle:** dedupe ent mesh components for photo mode (#33) ([bf40361](https://github.com/frederico-kluser/cyberpunk-2077-mods/commit/bf40361))
+- **lethalheadshots:** aim with the crosshair APIs and split the proofs (#32) ([bd2321d](https://github.com/frederico-kluser/cyberpunk-2077-mods/commit/bd2321d))
+- **DesertEagle:** resolve wolvenkit oodle loading and buffer loss (#29) ([bb10065](https://github.com/frederico-kluser/cyberpunk-2077-mods/commit/bb10065))
+- **lethalheadshots:** rebuild the label on every aim (#27) ([80230b4](https://github.com/frederico-kluser/cyberpunk-2077-mods/commit/80230b4))
+- **lethalheadshots:** trace the aim ticker with FTLog markers (#26) ([04e1377](https://github.com/frederico-kluser/cyberpunk-2077-mods/commit/04e1377))
+- **lethalheadshots:** make the aim ticker immortal and self-healing (#24) ([408af34](https://github.com/frederico-kluser/cyberpunk-2077-mods/commit/408af34))
+- **lethalheadshots:** four-channel aim label with vanilla HUD fallback (#19) ([403fd02](https://github.com/frederico-kluser/cyberpunk-2077-mods/commit/403fd02))
+- **lethalheadshots:** show aim label from the crosshair controller (#14) ([a73ed64](https://github.com/frederico-kluser/cyberpunk-2077-mods/commit/a73ed64))
+
+### Documentation
+- document the CET gate launch command ([ef9b9cb](https://github.com/frederico-kluser/cyberpunk-2077-mods/commit/ef9b9cb))
+- **lethalheadshots:** record engineering lessons and pitfalls (#22) ([d49fcf9](https://github.com/frederico-kluser/cyberpunk-2077-mods/commit/d49fcf9))
+- **DesertEagle:** CS2 to Nue animation calibration map (#18) ([2dc8241](https://github.com/frederico-kluser/cyberpunk-2077-mods/commit/2dc8241))
+- require merge to main to finish any task (#12) ([ca2a4f2](https://github.com/frederico-kluser/cyberpunk-2077-mods/commit/ca2a4f2))
+- **research:** add manual de HUD e guia de armas + indice (#10) ([9305f32](https://github.com/frederico-kluser/cyberpunk-2077-mods/commit/9305f32))
+- **research:** add guia de modding tecnico do CP2077 (#9) ([e95cb48](https://github.com/frederico-kluser/cyberpunk-2077-mods/commit/e95cb48))
+- add CoALA project memory and catalog (#8) ([86182d6](https://github.com/frederico-kluser/cyberpunk-2077-mods/commit/86182d6))
+- explain how to add a mod to the monorepo (#5) ([049c2c8](https://github.com/frederico-kluser/cyberpunk-2077-mods/commit/049c2c8))
+
+### Tests
+- **DesertEagle:** verify the packed release end to end (#36) ([b43c4f2](https://github.com/frederico-kluser/cyberpunk-2077-mods/commit/b43c4f2))
+
+### Build & CI
+- pin scorecard action to its commit SHA (#7) ([935cf60](https://github.com/frederico-kluser/cyberpunk-2077-mods/commit/935cf60))
+- keep optional release-please automation pinned (#6) ([1ad01a2](https://github.com/frederico-kluser/cyberpunk-2077-mods/commit/1ad01a2))
+- version enterprise commit-message ruleset (#4) ([625f04e](https://github.com/frederico-kluser/cyberpunk-2077-mods/commit/625f04e))
+
+## [1.1.0] - 2026-10-24
+
+### Features
 - **tools:** gate CET behind the -modded launch flag ([147cafa](https://github.com/frederico-kluser/cyberpunk-2077-mods/commit/147cafa))
 - **DesertEagle:** render the final textured model (#44) ([f85795a](https://github.com/frederico-kluser/cyberpunk-2077-mods/commit/f85795a))
 - **DesertEagle:** wire cs2 textures into the mesh material (#43) ([baca13a](https://github.com/frederico-kluser/cyberpunk-2077-mods/commit/baca13a))
