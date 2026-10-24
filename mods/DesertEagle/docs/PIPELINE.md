@@ -115,6 +115,25 @@ removidas, `resolvedDependencies` limpo e `baseEntity` apontado para o nosso
 - O `baseEntity` da Nue vem **vazio** (`0`) — é o nosso `.app` que aponta para o
   `.ent` (o passo do Modo Fotografia).
 
+### Formato das texturas (`.xbm`) — decodificado
+
+As texturas seguem o mesmo padrão do mesh: metadados no CR2W + píxeis em
+base64 (`textureData.Bytes`), com a cadeia de mips descrita por
+`rendRenderTextureBlobHeader` (MemoryLayout `rowPitch/slicePitch` + Placement
+`offset/size` por mip) e `rendRenderTextureBlobTextureInfo`/`SizeInfo`.
+
+| Dado | Formato | Prova |
+| --- | --- | --- |
+| Compressão de píxeis | **BCn** (BC5 para normais, BC1/3 para albedo) | mip0 de 128×128: `rowPitch=512` = 128 texels × 16 B/bloco BC5; `slicePitch=16384` = 1 B/texel |
+| Cadeia de mips | offsets contíguos (16384+4096+1024+256+…) = `textureDataSize` | bate certo |
+| Metadados | `setup.compression` (`TCM_Normalmap`…), `group` (`TEXG_Generic_Normal`…), `rawFormat: TRF_TrueColor` | verificado |
+
+O extrator `scripts/glb_textures.py` já tira as texturas PNG do modelo CS2
+(3 mapas 4K: albedo/normal/roughness). **Trabalho seguinte**: codificador BCn
+(BC1/BC3/BC5) + escritor `.xbm` (simétrico ao `mesh_write.py`) para colar as
+texturas CS2 nos materiais do jogo — o último passo para a arma parecer uma
+Desert Eagle a sério em vez de metal da Nue sobre as UVs do CS2.
+
 ### Formato do buffer de geometria (decodificado e verificado)
 
 O `.mesh` guarda os vértices embutidos em base64 (`renderBuffer.Bytes`), com o
