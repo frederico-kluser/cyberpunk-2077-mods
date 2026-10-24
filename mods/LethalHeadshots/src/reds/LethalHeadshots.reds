@@ -47,6 +47,20 @@ public let m_lhProbeTarget: ref<inkRectangle>;
 @addField(gameuiCrosshairContainerController)
 public let m_lhProbeHead: ref<inkRectangle>;
 
+// Overlay state, owned by the controller so ANY driver (the ticker, the
+// crosshair state changes, the kill path) can run the same poll logic.
+@addField(gameuiCrosshairContainerController)
+public let m_lhOverHead: Bool;
+
+@addField(gameuiCrosshairContainerController)
+public let m_lhTargetSeen: Bool;
+
+@addField(gameuiCrosshairContainerController)
+public let m_lhMsgTicks: Int32;
+
+@addField(gameuiCrosshairContainerController)
+public let m_lhTicks: Int32;
+
 // ---------------------------------------------------------------------------
 // Aim ticker: polls the crosshair-over-head state and drives the overlay.
 // ---------------------------------------------------------------------------
@@ -114,50 +128,65 @@ public class LhAimTicker extends DelayCallback {
       return;
     };
 
-    let targetSeen: Bool;
-    let overHead: Bool = IsCrosshairOnHead(this.m_player, targetSeen);
-    let risingEdge: Bool = overHead && NotEquals(overHead, this.m_overHead);
-
-    // Proofs FIRST (cheap and safe): they must keep working even if the widget
-    // work at the end of the tick throws at runtime.
+    // FIRST-TICK PROOF, before any query: if this message never appears, the
+    // DelayCallback chain itself is not running.
     if DebugProbes() {
-      if targetSeen && NotEquals(targetSeen, this.m_targetSeen) {
-        PushQueOtaMessage(this.m_player, "ALVO SOB A MIRA");
-      };
-      this.m_targetSeen = targetSeen;
-
-      if risingEdge {
-        this.m_msgTicks = 0;
-        PushQueOtaMessage(this.m_player, "QUE OTA");
-      } else {
-        if overHead {
-          this.m_msgTicks += 1;
-          if this.m_msgTicks >= 16 {
-            this.m_msgTicks = 0;
-            PushQueOtaMessage(this.m_player, "QUE OTA");
-          };
-        } else {
-          this.m_msgTicks = 0;
-        };
-      };
-    };
-
-    // Overlay LAST — the risky part. `fresh` rebuilds the widget tree from
-    // scratch on every rising edge, so a widget the game detached (weapon
-    // swap, holster, scene change) can never block the label again.
-    this.m_ctrl.LhUpdateOverlay(targetSeen, overHead, risingEdge);
-    this.m_overHead = overHead;
-
-    if DebugProbes() {
-      this.m_ticks += 1;
-      if this.m_ticks == 1 {
+      this.m_ctrl.m_lhTicks += 1;
+      if this.m_ctrl.m_lhTicks == 1 {
         FTLog("LethalHeadshots: primeiro tick do ticker");
-      };
-      if risingEdge {
-        FTLog("LethalHeadshots: cabeca sob a mira");
+        PushQueOtaMessage(this.m_player, "MIRA PRONTA");
       };
     };
+
+    this.m_ctrl.LhPoll(this.m_player);
   }
+}
+
+// The whole per-aim poll: target query, proofs, overlay. Owned by the
+// controller so it can be driven by the ticker AND by crosshair state changes.
+@addMethod(gameuiCrosshairContainerController)
+public final func LhPoll(player: ref<PlayerPuppet>) -> Void {
+  if !IsDefined(player) {
+    return;
+  };
+
+  let targetSeen: Bool;
+  let overHead: Bool = IsCrosshairOnHead(player, targetSeen);
+  let risingEdge: Bool = overHead && NotEquals(overHead, this.m_lhOverHead);
+
+  // Proofs FIRST (cheap and safe): they must keep working even if the widget
+  // work at the end of the poll throws at runtime.
+  if DebugProbes() {
+    if targetSeen && NotEquals(targetSeen, this.m_lhTargetSeen) {
+      PushQueOtaMessage(player, "ALVO SOB A MIRA");
+    };
+    this.m_lhTargetSeen = targetSeen;
+
+    if risingEdge {
+      this.m_lhMsgTicks = 0;
+      PushQueOtaMessage(player, "QUE OTA");
+    } else {
+      if overHead {
+        this.m_lhMsgTicks += 1;
+        if this.m_lhMsgTicks >= 16 {
+          this.m_lhMsgTicks = 0;
+          PushQueOtaMessage(player, "QUE OTA");
+        };
+      } else {
+        this.m_lhMsgTicks = 0;
+      };
+    };
+  };
+
+  // Overlay LAST — the risky part. `fresh` rebuilds the widget tree from
+  // scratch on every rising edge, so a widget the game detached (weapon
+  // swap, holster, scene change) can never block the label again.
+  this.LhUpdateOverlay(targetSeen, overHead, risingEdge);
+  this.m_lhOverHead = overHead;
+
+  if DebugProbes() && risingEdge {
+    FTLog("LethalHeadshots: cabeca sob a mira");
+  };
 }
 
 // Vanilla HUD message through the UI_Notifications blackboard — the same path
@@ -203,6 +232,19 @@ protected cb func OnPlayerAttach(playerGameObject: ref<GameObject>) -> Bool {
     LhAimTicker.Start(player, this);
   };
   return ret;
+}
+
+// Second driver, independent of the DelayCallback ticker: the game calls this
+// on every crosshair state change (weapon ready, aim start/stop) — exactly
+// "every time the player aims". If the ticker chain ever fails, this still
+// refreshes the label on each aim.
+@wrapMethod(gameuiCrosshairBaseGameController)
+protected func OnCrosshairStateChange(oldState: gamePSMCrosshairStates, newState: gamePSMCrosshairStates) -> Void {
+  wrappedMethod(oldState, newState);
+  let player: ref<PlayerPuppet> = GetPlayer(GetGameInstance());
+  if IsDefined(player) && IsDefined(player.m_lhCrosshair) {
+    player.m_lhCrosshair.LhPoll(player);
+  };
 }
 
 // Called every tick: refreshes all three channels. `fresh` rebuilds the
