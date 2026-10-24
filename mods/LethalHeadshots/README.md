@@ -87,9 +87,15 @@ not by the engine's aim-projection pipeline (which never fires reliably in
 game). Each tick asks `TargetingSystem.GetLookAtObject`/`GetLookAtPosition`
 where the crosshair ray hits and compares that point with the target's `Head`
 slot — the same slot the game's own AI aims at — so the label is precise in any
-pose (standing, crouched, seated). The label is a plain `inkText` parented to
-the game's own crosshair container (no Cyber Engine Tweaks, no Codeware, no
-RED4ext) and is created lazily on first use.
+pose (standing, crouched, seated).
+
+While `DebugProbes` is on (the default), the overlay reports itself on four
+channels so a missing label pinpoints its own cause: the crosshair **tints**
+white → orange (target under it) → red (over a killable head); a **blue bar**
+(target) and a **red bar** (head) appear above the crosshair; the red **QUE
+OTA** `inkText` appears between them; and the game's own **HUD warning
+message** shows `QUE OTA` too (vanilla `UI_Notifications` blackboard — it works
+even if every custom widget fails). See `docs/TESTING.md` for how to read them.
 
 The widget is owned by `gameuiCrosshairContainerController` — the controller
 that owns the crosshair widget tree — and the player only carries a bridge plus
