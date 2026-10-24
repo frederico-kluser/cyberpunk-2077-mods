@@ -54,7 +54,9 @@ Run these with a fresh save or a save where you can reload freely.
 | --- | --- | --- |
 | 1 | Shoot a hostile ganger in the head with a pistol | Dies on the first hit |
 | 2 | Shoot the same enemy in the chest | Normal damage, no instant kill |
-| 3 | Aim at an enemy's head without shooting (aim assist / projection) | Nothing happens |
+| 3 | Aim at an enemy's head without shooting (aim assist / projection) | The enemy takes no damage; the red **QUE OTA** label appears above the crosshair |
+| 3b | Move the crosshair from the head to the chest | The label disappears immediately |
+| 3c | Aim at a head, then holster the weapon or reload a save | The label disappears, and shows/hides correctly again on the next aim |
 | 4 | Shoot a civilian in the head | Dies (default) — survives only if `SpareCivilians = true` |
 | 5 | Shoot an ally / companion in the head | Dies (default) — survives only if `SpareAllies = true` |
 | 6 | Headshot a boss (e.g. a cyberpsycho) | Dies, unless the boss is in a protected phase |

@@ -86,6 +86,15 @@ config options above. The label is a plain `inkText` parented to the game's own
 crosshair container (no Cyber Engine Tweaks, no Codeware, no RED4ext) and is
 created lazily on first use.
 
+The widget is owned by `gameuiCrosshairContainerController` — the controller
+that owns the crosshair widget tree — and the player only carries a bridge to
+it, re-established on every `OnInitialize`/`OnPlayerAttach`. Earlier versions
+captured the HUD root once, in `OnInitialize`, through `GetPlayer()`: the HUD
+can initialize before the player exists (and is rebuilt across loading screens),
+so that capture silently failed and the label never appeared. Keeping the
+widget on the controller side makes it independent of the player/HUD
+initialization order.
+
 ## How it works (short version)
 
 The mod wraps `DamageSystem.ProcessLocalizedDamage` — the same function where
@@ -128,6 +137,7 @@ guards, is in [docs/ARCHITECTURE.md](../../docs/ARCHITECTURE.md).
 | Compile error in the log | You are probably on redscript < 0.5.32 or on a different game patch. |
 | Works on enemies, not on a specific boss | The boss is probably protected (god mode / quest flag). That is `SpareProtectedTargets`. |
 | Civilians survive a headshot | `SpareCivilians` is set to `true`; set it to `false` to kill everyone. |
+| Headshots kill, but the "QUE OTA" label never appears | The label needs the HUD bridge: it is re-established when the HUD attaches to the player (loading a save, re-equipping a weapon). Check the compile log first — if the game compiled an old `r6\scripts` copy, redeploy with `tools/deploy.ps1`. |
 
 ## Development
 

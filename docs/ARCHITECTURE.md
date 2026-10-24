@@ -84,7 +84,31 @@ by `HeadshotImmunity` and by a zero headshot multiplier, which would make the
 mod silently inert on some targets. It checks the hit shape directly, which is
 what "the bullet hit the head" actually means.
 
-## 4. Compatibility notes
+## 4. The aim preview label ("QUE OTA")
+
+The label reuses the engine's own hit projection. While the player aims,
+`DamageSystem` runs projected hits (`gameHitEvent.projectionPipeline = true`)
+through the same `PreProcess → ModifyHitData → ProcessLocalizedDamage` chain,
+and the vanilla `CheckProjectionPipelineTargetConditions` only lets a projected
+hit through when the tracked target, the breach state or the body part changes —
+and any transition to or from `EHitReactionZone.Head` is such a change. That is
+exactly the signal the label needs: it flips on when the crosshair enters a head
+and off when it leaves, mirroring the same guards the kill uses. When the
+crosshair leaves every target, the game calls
+`DamageSystem.ClearPreviewTargetStruct()` (from the player state machine and
+weapon transitions), which the mod wraps to hide the label.
+
+The widget is a plain `inkText` created lazily under the root widget of
+`gameuiCrosshairContainerController` (font `orbitron`, anchored centered,
+140 px above the crosshair). It is owned by the **controller**, not by the
+player puppet: the HUD can initialize before the player exists and is rebuilt
+across loading screens, so the player only carries a bridge (`m_lhCrosshair`)
+that is re-established in `OnInitialize` and — reliably, with the player as a
+parameter — in `OnPlayerAttach`. Capturing the HUD root once through
+`GetPlayer()` in `OnInitialize` (the 1.0.x approach) silently failed whenever
+the player was not ready yet, which is why the label never appeared.
+
+## 5. Compatibility notes
 
 - **Redscript module name:** `LethalHeadshots`. Redscript resolves `@wrapMethod`
   chains in load order; wrapping (not replacing) keeps other damage mods alive.
@@ -97,7 +121,7 @@ what "the bullet hit the head" actually means.
   future patch can change it. The type-check in `tools/validate.ps1` catches
   signature/API breaks as soon as the game bundle is updated.
 
-## 5. References
+## 6. References
 
 - Decompiled game scripts (community reference):
   <https://codeberg.org/adamsmasher/cyberpunk>
