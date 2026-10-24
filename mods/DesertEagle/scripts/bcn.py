@@ -120,8 +120,20 @@ def _bc1_decode(block: bytes) -> np.ndarray:
     return out.reshape(4, 4, 3)
 
 
+def _pad_to_4(a: np.ndarray) -> np.ndarray:
+    """Pad HxW(xC) to multiples of 4 by edge replication — BCn blocks are 4x4
+    and tiny mips (2x2/1x1) still occupy one full block."""
+    h, w = a.shape[:2]
+    ph = (4 - h % 4) % 4
+    pw = (4 - w % 4) % 4
+    if ph or pw:
+        a = np.pad(a, ((0, ph), (0, pw)) + ((0, 0),) * (a.ndim - 2), mode="edge")
+    return a
+
+
 def encode_bc4(gray: np.ndarray) -> bytes:
     """Encode an HxW uint8 single channel image as BC4 blocks."""
+    gray = _pad_to_4(gray)
     h, w = gray.shape
     out = bytearray()
     for y in range(0, h, 4):
@@ -131,13 +143,14 @@ def encode_bc4(gray: np.ndarray) -> bytes:
 
 
 def decode_bc4(data: bytes, h: int, w: int) -> np.ndarray:
-    out = np.zeros((h, w), dtype=np.uint8)
+    ph, pw = (3 + h) // 4 * 4, (3 + w) // 4 * 4
+    out = np.zeros((ph, pw), dtype=np.uint8)
     pos = 0
-    for y in range(0, h, 4):
-        for x in range(0, w, 4):
+    for y in range(0, ph, 4):
+        for x in range(0, pw, 4):
             out[y:y + 4, x:x + 4] = _bc4_decode(data[pos:pos + 8])
             pos += 8
-    return out
+    return out[:h, :w]
 
 
 def encode_bc5(rg: np.ndarray) -> bytes:
@@ -168,6 +181,7 @@ def decode_bc5(data: bytes, h: int, w: int) -> np.ndarray:
 
 def encode_bc1(rgb: np.ndarray) -> bytes:
     """Encode an HxWx3 uint8 image as BC1 blocks."""
+    rgb = _pad_to_4(rgb)
     h, w = rgb.shape[:2]
     out = bytearray()
     for y in range(0, h, 4):
@@ -177,10 +191,11 @@ def encode_bc1(rgb: np.ndarray) -> bytes:
 
 
 def decode_bc1(data: bytes, h: int, w: int) -> np.ndarray:
-    out = np.zeros((h, w, 3), dtype=np.uint8)
+    ph, pw = (3 + h) // 4 * 4, (3 + w) // 4 * 4
+    out = np.zeros((ph, pw, 3), dtype=np.uint8)
     pos = 0
-    for y in range(0, h, 4):
-        for x in range(0, w, 4):
+    for y in range(0, ph, 4):
+        for x in range(0, pw, 4):
             out[y:y + 4, x:x + 4] = _bc1_decode(data[pos:pos + 8])
             pos += 8
-    return out
+    return out[:h, :w]
