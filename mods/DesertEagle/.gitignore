@@ -58,5 +58,5 @@ assets/_inventory/*_log.txt
 
 
 # Holds de deploy/diagnostico + zips de frameworks — material de worktree.
-mods/DesertEagle/tools/
+tools/
 
