@@ -162,6 +162,13 @@ def main():
     anim_refs_walk(rc)
     ours = [v for v in anim_vals if v in want_keys]
     check(len(ours) >= 2, f"app animation sets point at our clips (found {len(ours)} refs)")
+    # the engine resolves ResourcePaths by FNV1a-64 hash — calibrated against
+    # the compiled app (assets/_inventory/calibrate_hash2.py). The anim refs
+    # round-trip as hash values matching our fnv1a64, so require the HASH form
+    # to be present too: that is what the game actually reads.
+    ours_hash = [v for v in anim_vals if isinstance(v, str) and v.isdigit()
+                 and int(v) in {fnv1a64(p) for p in anim_want}]
+    check(len(ours_hash) >= 2, f"anim refs present in hash form (engine-readable, found {len(ours_hash)})")
 
     # localization CONTENT: the item name must exist in both shipped locales
     def find_entries(node):
