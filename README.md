@@ -18,7 +18,7 @@ release pipeline.
 
 | Mod | Version | What it does |
 | --- | --- | --- |
-| [**Lethal Headshots**](mods/LethalHeadshots) | 1.0.1 | Every headshot kills instantly — any NPC, civilians included. No damage multipliers, no boss damage caps; only god-mode/quest-protected targets are spared. |
+| [**Lethal Headshots**](mods/LethalHeadshots) | 1.1.0 | Every headshot kills instantly — any NPC, no exceptions. No damage multipliers, no boss damage caps: the hit calls the game's force kill directly. Also shows a red "QUE OTA" label while the crosshair is over a killable head. |
 | [**Desert Eagle**](mods/DesertEagle) | 0.1.0 | Custom Desert Eagle .50 AE handgun over the Tsunami Nue skeleton and animations, produced by an automated Blender pipeline (alignment, rigging, LODs, export). |
 
 ## Requirements

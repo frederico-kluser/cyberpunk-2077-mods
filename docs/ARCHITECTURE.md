@@ -56,13 +56,19 @@ That path:
   still run;
 - does **not** show a damage number or award damage XP for the killing hit.
 
+On top of the flag, the mod calls `ScriptedPuppet.Kill(instigator)` on the
+target in the same hit — the game's force kill (it zeroes the Health stat pool
+with `RequestSettingStatPoolValueIgnoreChangeMode` and logs a `ForceKill`
+telemetry entry). The two mechanisms use the same stat-pool channel, so calling
+both is safe and guarantees the death even if another mod eats the flag.
+
 Alternatives considered:
 
 | Approach | Why it was rejected |
 | --- | --- |
 | TweakDB `HeadshotDamageMultiplier` | It is a multiplier on final damage. Boss caps and armour still apply, and a high enough multiplier is clamped. |
 | `attackComputed.SetAttackValue(maxHealth * N)` | Goes through the whole damage pipeline, so it is clamped on bosses and reduced by resistances; also produces absurd damage floaters. |
-| `NPCPuppet.Kill()` | Bypasses the damage pipeline entirely and has different anim/ragdoll semantics; harder to keep compatible with other damage mods. |
+| `NPCPuppet.Kill()` alone | Different anim/ragdoll semantics and it bypasses the damage pipeline; today it is used only as a complement to `hitFlag.Kill`, never instead of it. |
 | CET Lua observer | Adds a hard dependency (CET) for something Redscript does natively. |
 
 ## 3. Safety guards
@@ -76,8 +82,8 @@ The wrapper only marks the hit when every guard passes:
 | `!AttackData.IsAreaOfEffect(...)` | Explosions have no meaningful head hit shape. |
 | `target as ScriptedPuppet`, alive, not player | Devices, vehicles and corpses are out of scope. |
 | `IsHitReactionZoneHead(hitShape)` | Uses the engine's own head classification (`EHitReactionZone.Head`), not a distance or bone-name heuristic. |
-| `SpareCivilians`, `SpareAllies` | Design choice: the mod is about adversaries, not a civilian massacre. |
-| `SpareProtectedTargets` | `GetImmortality()` and the `IsInvulnerable` stat catch god-mode and quest-critical NPCs. |
+| `SpareCivilians`, `SpareAllies` | Optional mercy (off by default): flip them on to spare civilians or friendly-attitude characters. |
+| `SpareProtectedTargets` | Optional mercy for god-mode/quest-critical NPCs (`GetImmortality()`, `IsInvulnerable`). **Off by default** — the brute policy spares nobody. |
 
 Note that the mod does **not** check `hitFlag.Headshot`: that flag is suppressed
 by `HeadshotImmunity` and by a zero headshot multiplier, which would make the
@@ -86,27 +92,42 @@ what "the bullet hit the head" actually means.
 
 ## 4. The aim preview label ("QUE OTA")
 
-The label reuses the engine's own hit projection. While the player aims,
-`DamageSystem` runs projected hits (`gameHitEvent.projectionPipeline = true`)
-through the same `PreProcess → ModifyHitData → ProcessLocalizedDamage` chain,
-and the vanilla `CheckProjectionPipelineTargetConditions` only lets a projected
-hit through when the tracked target, the breach state or the body part changes —
-and any transition to or from `EHitReactionZone.Head` is such a change. That is
-exactly the signal the label needs: it flips on when the crosshair enters a head
-and off when it leaves, mirroring the same guards the kill uses. When the
-crosshair leaves every target, the game calls
-`DamageSystem.ClearPreviewTargetStruct()` (from the player state machine and
-weapon transitions), which the mod wraps to hide the label.
+The label is driven by an aim **ticker**, not by engine events. A
+`DelayCallback` subclass (`LhAimTicker`) re-arms itself every ~0.12 s and asks,
+per tick:
+
+```text
+TargetingSystem.GetLookAtObject(player, withLOS, ignoreTransparent)  → target
+TargetingSystem.GetLookAtPosition(player, withLOS, ignoreTransparent) → aim point
+AIActionHelper.GetTargetSlotPosition(target, "Head", out headPos)     → head slot
+over a head := Distance(aimPoint, headPos) < 0.30
+```
+
+The `Head` slot is the same slot the game's own AI uses to aim at heads
+(`AIActionHelper`, `aiLookats`, headshot prereqs), so the test is pose
+independent — standing, crouched or seated — and needs no bone-name or bbox
+heuristics (a height-above-root heuristic remains as fallback for targets
+without the slot). The result is filtered by the same `ShouldSpare` config as
+the kill, so the label previews exactly what the next shot would do.
+
+History: earlier versions sourced the signal from the engine's aim projection
+(`gameHitEvent.projectionPipeline`), which the vanilla
+`CheckProjectionPipelineTargetConditions` only lets through on target/body-part
+transitions. That pipeline never fires reliably in game (it appears to depend
+on aim-assist internals), so the label never appeared; polling the aim removes
+that whole dependency. `DamageSystem.ClearPreviewTargetStruct()` is still
+wrapped for an instant hide when the crosshair leaves every target (holster,
+scene change).
 
 The widget is a plain `inkText` created lazily under the root widget of
 `gameuiCrosshairContainerController` (font `orbitron`, anchored centered,
 140 px above the crosshair). It is owned by the **controller**, not by the
 player puppet: the HUD can initialize before the player exists and is rebuilt
 across loading screens, so the player only carries a bridge (`m_lhCrosshair`)
-that is re-established in `OnInitialize` and — reliably, with the player as a
-parameter — in `OnPlayerAttach`. Capturing the HUD root once through
-`GetPlayer()` in `OnInitialize` (the 1.0.x approach) silently failed whenever
-the player was not ready yet, which is why the label never appeared.
+and the running ticker, re-established in `OnInitialize` and — reliably, with
+the player as a parameter — in `OnPlayerAttach`. Capturing the HUD root once
+through `GetPlayer()` in `OnInitialize` (the 1.0.x approach) silently failed
+whenever the player was not ready yet.
 
 ## 5. Compatibility notes
 
