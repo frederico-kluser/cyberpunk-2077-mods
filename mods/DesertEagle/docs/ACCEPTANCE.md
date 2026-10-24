@@ -28,7 +28,7 @@ Instala na raiz do jogo: `r6\scripts\DesertEagle\`, `r6\tweaks\desert_eagle.yaml
 |---|---|---|---|
 | 1 | Spawn | CET: `Game.AddToInventory("Items.DesertEagle", 1)` | item "Desert Eagle" no inventário |
 | 2 | Visual em 1.ª pessoa | equipar a arma | **Desert Eagle texturizada** (empunhadura em diamante, corrediça prateada) — NÃO o visual da Nue |
-| 3 | Escala/empunhadura | olhar para baixo/lados | arma nas mãos sem atravessar, punho alinhado |
+| 3 | Escala/empunhadura | olhar para baixo/lados | arma nas mãos sem atravessar, punho alinhado — **atenção**: o grip herda o ângulo de repouso do CS2 (rest-to-rest); se aparecer inclinada na mão, é tuning de `rest_delta_matrices` |
 | 4 | Disparar | R2/click | recuo + fogacho; corrediça recua (animação CS2 `recoil_shoulder`) |
 | 5 | Equipar (draw) | trocar de arma 2× | animação CS2 `first_equip` |
 | 6 | Recarregar (vazio) | esvaziar carregador + recarregar | animação CS2 `empty_reload` — carregador desce/sobe |
