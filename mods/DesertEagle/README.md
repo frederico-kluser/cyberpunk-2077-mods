@@ -94,17 +94,24 @@ Detalhe, comandos e armadilhas: [`docs/PIPELINE.md`](docs/PIPELINE.md).
 
 ## Limitações conhecidas
 
-- Animações customizadas (`.re` via plugin REDmod) entram numa fase posterior;
-  nesta fase usa-se a animação vanilla da Nue — é o passo recomendado para
-  validar primeiro o pipeline de geometria.
-- Mãos de V podem intersectar o corpo da arma (problema clássico destes mods);
-  resolvem-se ajustando o alinhamento ou os `ikOffset`.
+- As mãos de V podem intersectar ligeiramente o corpo da arma (problema clássico
+  destes mods) — a sessão de teste em jogo ([`docs/ACCEPTANCE.md`](docs/ACCEPTANCE.md))
+  é onde se calibra; o ajuste é a rotação A do grip (`assets/work/de_align.json`
+  → root das animações, ver [`docs/ANIMS.md`](docs/ANIMS.md)).
+- As variantes NPC/dual-wield mantêm as animações vanilla da Nue (escolha
+  deliberada — só o conjunto de primeira-pessoa foi substituído).
 
 ## Testado como
 
-- `tests/test_smoke.py` do pipeline Blender: `SMOKE_TEST_OK`
+- `scripts/run_tests.py` (6 verificações: codecs BCn + animação, pacote,
+  conteúdo do mesh, 13 clips, alinhamento do grip): `RUN_TESTS_OK (6/6)`
+- conteúdo de texturas (`scripts/verify_xbm_content.py`): cor exata (0,000/255),
+  normais BC5 0,87/255, green-flip DirectX provado
+- skinning semântico (`scripts/verify_skin_mapping.py`): trigger 1,5 cm ·
+  slide 1,6 cm · hammer 2,4 cm dos seus ossos
+- renders de integração: recarga com o carregador a sair (`docs/renders/`)
 - `pwsh -File tools/validate.ps1 -Static` do repositório
-- em jogo: pendente (fases seguintes)
+- em jogo: pendente da autorização do dono (`docs/ACCEPTANCE.md`)
 
 ## Licença
 
