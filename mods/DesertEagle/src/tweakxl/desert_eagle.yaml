@@ -23,16 +23,93 @@ Items.DesertEagle:
   ikOffset: {x: 0, y: 0, z: 0}
 
 # ---------------------------------------------------------------------------
-# Calibração (docs/PIPELINE.md §7). Descomentar e ajustar em jogo, com
-# Red Hot Tools + Red CLI em modo watch para ver o efeito sem reiniciar.
+# Calibração balística — identidade ".50 AE hand cannon"
 #
-# Items.DesertEagle:
-#   CycleTimeBase: 0.25          # razão tempo-de-ciclo / tempo-de-disparo
-#   ReloadTimeBase: 2.1          # velocidade da animação de recarga
-#   EmptyReloadTime: 2.6
-#   RecoilKickMin: 0.05          # deslocamento do coice
-#   RecoilKickMax: 0.12
-#   RecoilTime: 0.1              # tempo até ao recuo máximo
-#   RecoilRecovery: 0.25         # retorno à posição original
-#   RecoilDir: {x: 0, y: 0, z: 1}
+# Vocabulário BaseStats verificado no wiki (Cheat Sheet: Weapon BaseStats,
+# testado in-game). Os valores são o DESIGN de partida: dano por tiro alto,
+# cadência baixa, recuo pesado, carregador curto. A calibração final faz-se em
+# jogo com Red Hot Tools + Red CLI em watch (docs/PIPELINE.md §7).
+#
+# São registos próprios — NÃO se mexe nos BaseStats.X globais (afetariam todas
+# as armas). O preset herda os statModifiers da Nue e estes somam-se por cima
+# (Additive); para valores absolutos usar modifierType: Override ou limpar os
+# modificadores da base no ajuste fino.
 # ---------------------------------------------------------------------------
+
+DesertEagle.Stats.DPS:
+  $type: gamedataConstantStatModifier_Record
+  statType: BaseStats.DPS
+  modifierType: Additive
+  value: 380
+
+DesertEagle.Stats.CycleTime:
+  $type: gamedataConstantStatModifier_Record
+  statType: BaseStats.CycleTimeBase
+  modifierType: Additive
+  value: 0.45
+
+DesertEagle.Stats.MagazineCapacity:
+  $type: gamedataConstantStatModifier_Record
+  statType: BaseStats.MagazineCapacityBase
+  modifierType: Additive
+  value: 7
+
+DesertEagle.Stats.ReloadTime:
+  $type: gamedataConstantStatModifier_Record
+  statType: BaseStats.ReloadTimeBase
+  modifierType: Additive
+  value: 2.4
+
+DesertEagle.Stats.EmptyReloadTime:
+  $type: gamedataConstantStatModifier_Record
+  statType: BaseStats.EmptyReloadTime
+  modifierType: Additive
+  value: 3.2
+
+DesertEagle.Stats.RecoilKickMin:
+  $type: gamedataConstantStatModifier_Record
+  statType: BaseStats.RecoilKickMin
+  modifierType: Additive
+  value: 0.18
+
+DesertEagle.Stats.RecoilKickMax:
+  $type: gamedataConstantStatModifier_Record
+  statType: BaseStats.RecoilKickMax
+  modifierType: Additive
+  value: 0.42
+
+DesertEagle.Stats.RecoilTime:
+  $type: gamedataConstantStatModifier_Record
+  statType: BaseStats.RecoilTime
+  modifierType: Additive
+  value: 0.12
+
+DesertEagle.Stats.RecoilRecovery:
+  $type: gamedataConstantStatModifier_Record
+  statType: BaseStats.RecoilRecovery
+  modifierType: Additive
+  value: 0.35
+
+DesertEagle.Stats.WeaponNoise:
+  $type: gamedataConstantStatModifier_Record
+  statType: BaseStats.WeaponNoise
+  modifierType: Additive
+  value: 3.0
+
+DesertEagle.Stats.HeadshotMultiplier:
+  $type: gamedataConstantStatModifier_Record
+  statType: BaseStats.HeadshotDamageMultiplier
+  modifierType: Additive
+  value: 2.5
+
+DesertEagle.Stats.EffectiveRange:
+  $type: gamedataConstantStatModifier_Record
+  statType: BaseStats.EffectiveRange
+  modifierType: Additive
+  value: 35
+
+DesertEagle.Stats.MaximumRange:
+  $type: gamedataConstantStatModifier_Record
+  statType: BaseStats.MaximumRange
+  modifierType: Additive
+  value: 60
