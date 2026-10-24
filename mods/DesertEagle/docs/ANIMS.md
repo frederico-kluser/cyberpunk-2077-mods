@@ -86,5 +86,59 @@ cópias extraídas em `assets/extracted/`, e o resultado fica em `assets/work/`.
 | --- | --- |
 | Nomes/durações reais extraídos (2 conjuntos, 13 animações) | feito |
 | Mapa de calibração decidido | feito (tabela acima) |
-| Re-time + export `.re` | próximo passo |
-| Injeção nos `.anims` + validação | pendente |
+| **Re-time + export `.re`** | **feito** — 6 ficheiros em `assets/work/re/` via `export_re_anims.py` |
+| Injeção nos `.anims` + validação | **bloqueado**: requer `redMod.exe` (ver baixo) |
+
+## Formato `.re` (engenharia reversa dos starters oficiais da CDPR)
+
+O `.re` é um HDF5 com uma estrutura fixa (descoberta pelos scripts
+`assets/_inventory/inspect_re*.py` sobre os starters do plugin REDmod):
+
+```text
+.re (HDF5)
+├── .re_header/                                (grupo vazio)
+└── .re_asset_node/
+    ├── .re_asset_description_node/.re_skeleton/
+    │   ├── bonenames   (N,)   bytes           — nomes dos ossos
+    │   ├── bonexforms  (N,10) float32         — pos(3) quat(x,y,z,w) scale(3)
+    │   ├── parents     (1,N)  int32           — zeros nos ficheiros CDPR
+    │   ├── channels    (M,)   bytes + curves (1,M) — tracks de floats
+    │   └── <osso raiz>/…                      — árvore de ossos (grupo por osso,
+    │         .transform/.attributes/xform      cada grupo de TOPO = um osso raiz)
+    └── .re_animation_container/.re_animation/
+        ├── animation (0,10)
+        └── .re_anim_clip/
+            ├── <osso>/xformframes (K,11)      — pos.xyz rot.xyzw scale.xyz time
+            ├── <canal>/keyframes  (K,) [value,time]
+            └── *extraTransforms/  (vazio)
+```
+
+O escritor está em `src/blender/de_pipeline/re_export.py` e o driver em
+`src/blender/export_re_anims.py` (amostra as ações CS2, re-timed para os frames
+alvo, e compõe `out = resto_nue @ delta_cs2`). O nome do ficheiro `.re` =
+nome da animação interna (regra do compilador).
+
+**Validação feita:** estrutura escrita e relida; armadilhas apanhadas: strings
+HDF5 são `vlen bytes` (não `object`) e os grupos de topo do `.re_skeleton` são
+ossos raiz (o starter tem `Root` porque o osso raiz se chama `Root`).
+
+## Bloqueio: `.re` → `.anims` requer `redMod.exe`
+
+- `wolvenkit-cli import` delega o import `.re` no **`redMod.exe`** → *"redMod.exe
+  not found"* (verificado nesta máquina: não existe em lado nenhum).
+- O `redMod` é o DLC gratuito **REDmod** da Steam — instala `tools/redmod/` na
+  pasta do jogo (proibido pela restrição do dono enquanto não autorizado).
+- O CLI também **não** importa `.anims.glb` diretamente (*"Direct mesh importing
+  is not implemented"*) — o import de GLB é só no WolvenKit **GUI**.
+
+Rotas possíveis para concluir (por decidir):
+
+1. **GUI WolvenKit** (manual, ~2 min): importar os `.re` de `assets/work/re/`
+   via *View > Import/Export* sobre os `.anims` extraídos.
+2. **REDmod DLC** (automático): instalar o DLC → `redMod.exe import` com
+   `-gameRoot` apontado para uma **cópia** dos `.anims` na worktree.
+3. **steamcmd/depot** (automático, jogo intocado): obter o `redMod.exe` para a
+   worktree sem instalar o DLC no jogo.
+4. **JSON↔CR2W** (`wolvenkit-cli convert serialize/deserialize`): editar os
+   buffers das animações diretamente no JSON (buffers SIMD/compressed em base64
+   — engenharia pesada, última recurso).
