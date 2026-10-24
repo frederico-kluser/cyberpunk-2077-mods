@@ -37,7 +37,7 @@ $factory = Join-Path $WorkDir 'cr2w_test\bin'
 
 Write-Host '== 1. Staging layout =='
 if (Test-Path $staging) { Remove-Item $staging -Recurse -Force }
-foreach ($d in @('items', 'factories', 'localization')) {
+foreach ($d in @('items', 'items\textures', 'factories', 'localization')) {
   New-Item -ItemType Directory -Force -Path (Join-Path $staging "desert_eagle\$d") | Out-Null
 }
 
@@ -45,7 +45,18 @@ Copy-Item (Join-Path $meshBin 'desert_eagle.mesh') (Join-Path $staging 'desert_e
 Copy-Item (Join-Path $deApp 'desert_eagle.app')   (Join-Path $staging 'desert_eagle\items\desert_eagle.app') -Force
 Copy-Item (Join-Path $deApp 'desert_eagle.ent')   (Join-Path $staging 'desert_eagle\items\desert_eagle.ent') -Force
 Copy-Item (Join-Path $factory 'weapons.csv')      (Join-Path $staging 'desert_eagle\factories\weapons.csv') -Force
-Write-Host '  items/factories copied'
+
+# textures built by src/blender/export_xbm.py (referenced by the mesh material)
+$xbmBin = Join-Path $WorkDir 'xbms\bin'
+foreach ($t in @('desert_eagle_bc.xbm', 'desert_eagle_n.xbm')) {
+  $src = Join-Path $xbmBin $t
+  if (Test-Path $src) {
+    Copy-Item $src (Join-Path $staging "desert_eagle\items\textures\$t") -Force
+  } else {
+    Write-Host "  [AVISO] textura '$t' em falta ($src) — o material vai referenciar um caminho ausente."
+  }
+}
+Write-Host '  items/factories/textures copied'
 
 Write-Host '== 2. Localizations (JSON -> CR2W) =='
 $locSrc = Join-Path $modRoot 'src\archivexl\localization'
