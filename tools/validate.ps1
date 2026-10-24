@@ -82,7 +82,14 @@ if ($null -eq $cli) {
   if (-not $Static) {
     try {
       $game = Find-CyberpunkGameDir -Path $GameDir
-      $bundle = Join-Path $game 'r6\cache\final.redscripts'
+      # Prefer the pristine cache redscript backs up before its first compile
+      # (final.redscripts.bk = the vanilla game API). Linting against the
+      # modded cache reports this mod's own previous compile as conflicting
+      # types/fields/methods, which is a false positive.
+      $bundle = Join-Path $game 'r6\cache\final.redscripts.bk'
+      if (-not (Test-Path -LiteralPath $bundle)) {
+        $bundle = Join-Path $game 'r6\cache\final.redscripts'
+      }
       Assert-True (Test-Path -LiteralPath $bundle) "bundle do jogo encontrado ($bundle)"
     } catch {
       $failures.Add($_.Exception.Message)
