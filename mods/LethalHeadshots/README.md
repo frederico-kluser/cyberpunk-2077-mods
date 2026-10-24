@@ -82,28 +82,24 @@ While aiming, the mod previews the outcome: a red **QUE OTA** label appears
 above the crosshair whenever the crosshair is over a head that would die on the
 next shot. It is purely cosmetic — aiming never kills.
 
-The label is driven by an aim **ticker** (`DelayCallback`, ~8 checks/second),
-not by the engine's aim-projection pipeline (which never fires reliably in
-game). Each tick asks `TargetingSystem.GetLookAtObject`/`GetLookAtPosition`
-where the crosshair ray hits and compares that point with the target's `Head`
-slot — the same slot the game's own AI aims at — so the label is precise in any
-pose (standing, crouched, seated).
+The label is driven by the callbacks proven to fire in game — crosshair state
+changes, `PlayerPuppet.OnAction` (throttled to ~8 polls/second) and the real-hit
+path — never by a `DelayCallback` ticker (proved dead in this engine context by
+the logging session) and never through `GetGameInstance()` inside UI hooks
+(proved null there).
 
-While `DebugProbes` is on (the default), the overlay reports itself on four
-channels so a missing label pinpoints its own cause: the crosshair **tints**
-white → orange (target under it) → red (over a killable head); a **blue bar**
-(target) and a **red bar** (head) appear above the crosshair; the red **QUE
-OTA** `inkText` appears between them; and the game's own **HUD warning
-message** shows `QUE OTA` too (vanilla `UI_Notifications` blackboard — it works
-even if every custom widget fails). See `docs/TESTING.md` for how to read them.
+The head test is deliberately tight: the crosshair **ray** must pass within
+**15 cm** of the target's `Head` slot (the same slot the game's own AI aims at),
+and the game's own `HeadTarget` component filter must find a head near the
+crosshair. It is precise in any pose (standing, crouched, seated) and never
+fires over the torso.
 
-The widget is owned by `gameuiCrosshairContainerController` — the controller
-that owns the crosshair widget tree — and the player only carries a bridge plus
-the running ticker, re-established on every `OnInitialize`/`OnPlayerAttach`.
-Earlier versions captured the HUD root once through `GetPlayer()` (the HUD can
-initialize before the player exists) and later relied on the aim-projection
-pipeline for the signal; both silently failed, which is why the label never
-appeared. Polling the aim removes that whole class of failure.
+The text is the ONLY visual this mod draws: a red **QUE OTA** `inkText` above
+the crosshair, shown while the crosshair is over a head. The single screen
+notification is the **QUE OTA** toast (vanilla `UI_Notifications` blackboard),
+fired **only on a headshot kill**. The widget is owned by the active crosshair
+controller (`gameuiCrosshairBaseGameController`) and rebuilt on every rising
+edge, so it survives weapon swaps, holsters and scene changes.
 
 ## How it works (short version)
 
