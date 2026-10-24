@@ -79,8 +79,10 @@ def xform_matrix(rows12):
 
 def load_re():
     """Returns names, parents, rest local matrices (from the bone TREE) and
-    clip poses. The flat tables in our .re files are degenerate (parents all
-    zero) — the real hierarchy lives in the nested bone groups."""
+    clip poses. The flat tables and the bone tree are CONSISTENT (verified:
+    every flat pos matches the tree translation); `parents` is all-zero BY
+    CDPR CONVENTION (hierarchy = nested bone groups), which is what this
+    loader walks."""
     with h5py.File(RE, "r") as f:
         sk = f["/.re_asset_node/.re_asset_description_node/.re_skeleton"]
         root = sk["barrel_plug"]
