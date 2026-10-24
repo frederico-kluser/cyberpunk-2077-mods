@@ -15,6 +15,7 @@ Transformations (per docs/PIPELINE.md §5):
 Usage: python3 build_app_json.py <app_json> <ent_json> <out_dir>
 """
 
+import copy
 import json
 import os
 import sys
@@ -111,8 +112,27 @@ def transform_app(app):
     return app
 
 
-def transform_ent(ent):
+def transform_ent(ent, app_components=None):
     rc = ent["Data"]["RootChunk"]
+
+    # The .ent components are CR2W types distinct from the .app appearance
+    # ones (copying them across breaks WolvenKit's cast) — so instead of a
+    # blind copy we keep the ent's own components and drop the extra
+    # entSkinnedMeshComponents (they referenced vanilla part meshes that do
+    # not exist in our mesh and would double-render in Photo Mode). One body
+    # component remains, repointed to our mesh by the walk below.
+    comps = rc.get("components") or []
+    kept = []
+    skinned_seen = 0
+    for comp in comps:
+        cd = comp.get("Data", comp)
+        if cd.get("$type") == "entSkinnedMeshComponent":
+            skinned_seen += 1
+            if skinned_seen > 1:
+                continue
+        kept.append(comp)
+    rc["components"] = kept
+    print(f"ENT_SUMMARY components={len(kept)} (dropped {len(comps) - len(kept)} duplicate skinned)")
 
     def walk(node):
         if isinstance(node, dict):
@@ -144,7 +164,8 @@ def main():
     print("APP_JSON_OK", app_out)
 
     ent = json.load(open(ent_json, encoding="utf-8"))
-    ent = transform_ent(ent)
+    app_components = app["Data"]["RootChunk"]["appearances"][0]["Data"].get("components")
+    ent = transform_ent(ent, app_components)
     ent_out = os.path.join(out_dir, "desert_eagle.ent.json")
     json.dump(ent, open(ent_out, "w", encoding="utf-8"), indent=1)
     print("ENT_JSON_OK", ent_out)
