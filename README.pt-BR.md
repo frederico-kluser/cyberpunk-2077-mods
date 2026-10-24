@@ -40,6 +40,31 @@ validação e release.
 
 Para desinstalar, apague a pasta `r6\scripts\<ModId>\`.
 
+## O gate do CET (comando especial de inicialização)
+
+O Cyber Engine Tweaks — necessário ao mod de diagnóstico **LogSentry** — só
+deve carregar **quando pedires explicitamente**. Um *wrapper* decide antes de o
+jogo arrancar. Adiciona isto a **Steam → Cyberpunk 2077 → Propriedades → Geral
+→ Opções de inicialização**:
+
+```
+"C:\Users\kluse\Tools\cet-gate.bat" %command% -modded
+```
+
+| Arranque | Resultado |
+| --- | --- |
+| **com** `-modded` | CET ligado — consola + logs do LogSentry |
+| **sem** `-modded` | CET desligado — jogo vanilla |
+
+O `%command%` faz a Steam entregar o comando real do jogo ao *gate*
+([`tools/cet-gate.bat`](tools/cet-gate.bat), instalado em
+`C:\Users\kluse\Tools\`), que renomeia `cyber_engine_tweaks.asi` ↔
+`cyber_engine_tweaks.asi.off` e depois arranca o jogo com todos os argumentos
+encaminhados. O `-modded` chega também ao jogo e força o pipeline REDmod
+(mantenha a pasta vazia `r6\cache\modded`).
+
+Sem a flag, o jogo corre exatamente como se o CET não estivesse instalado.
+
 ## Compilar a partir do código
 
 Os scripts de build precisam apenas de PowerShell 7 (ou Windows PowerShell 5.1)
