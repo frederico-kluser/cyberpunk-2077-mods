@@ -43,3 +43,10 @@ docs/renders/cs2/
 
 # Dumps serializados de animacoes (mesma politica dos rig_json).
 assets/_inventory/anims_json/
+
+# Starters .re + Metadata do plugin REDmod (material CDPR, extrair do zip oficial).
+assets/_inventory/redmod_starters/
+
+# Logs de debug.
+assets/_inventory/*_log.txt
+
