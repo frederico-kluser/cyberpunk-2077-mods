@@ -1,0 +1,128 @@
+C:\Users\kluse\AppData\Roaming\Blender Foundation\Blender\5.2\scripts\addons\i_scene_cp77_gltf\main\common.py:8: UserWarning: pkg_resources is deprecated as an API. See https://setuptools.pypa.io/en/latest/pkg_resources.html. The pkg_resources package is slated for removal as early as 2025-11-30. Refrain from using this package or pin to Setuptools<81.
+  import pkg_resources
+-------------------- Cyberpunk IO Suite Starting--------------------
+
+
+Blender Version:5.2.3
+Cyberpunk IO Suite version: 2.0.0
+
+
+-------------------- Cyberpunk IO Suite Has Started--------------------
+
+BlenderMCP addon registered
+LOADED UPDATER!
+Error: LZ4 module didn't load. Unsupported OS or Python version!
+Traceback (most recent call last):
+  File "C:\Users\kluse\AppData\Roaming\Blender Foundation\Blender\5.2\scripts\addons\rokoko\core\login_manager.py", line 27, in <module>
+    import boto3
+ModuleNotFoundError: No module named 'boto3'
+
+
+### Loading Rokoko Studio Live for Blender...
+Custom bone list not found.
+Custom name list file is not a valid name list file
+### Loaded Rokoko Studio Live for Blender successfully!
+
+BlenderMCP addon unregistered
+### Unloading Rokoko Studio Live for Blender...
+### Unloaded Rokoko Studio Live for Blender successfully!
+
+23:33:14 | INFO: Data are loaded, start creating Blender stuff
+23:33:14 | INFO: Blender create Mesh node Object_0
+23:33:14 | INFO: glTF import finished in 0.20s
+========================================================================
+CS2 MODEL PROFILE
+model_path=C:\Users\kluse\Projects\cyberpunk-2077-desert-eagle\mods\DesertEagle\assets\raw\desert_eagle_cs2.glb
+blender_version=5.2.3 LTS
+========================================================================
+
+-- OBJECTS --
+  GLTF_SceneRootNode                       type=EMPTY parent=root
+  GLTF_created_0                           type=ARMATURE parent=weapons/models/deagle/weapon_pist_deagle.vmdl_c_6
+  Icosphere                                type=MESH verts=42 polys=80
+  Object_7                                 type=MESH verts=15051 polys=18267 parent=GLTF_created_0
+  Sketchfab_model                          type=EMPTY
+  root                                     type=EMPTY parent=Sketchfab_model
+  weapons/models/deagle/weapon_pist_deagle.vmdl_c.body_hd_5 type=EMPTY parent=GLTF_created_0
+  weapons/models/deagle/weapon_pist_deagle.vmdl_c_6 type=EMPTY parent=GLTF_SceneRootNode
+
+-- MESH TOTALS -- meshes=2 vertices=15093 polygons=18347
+
+-- VERTEX GROUPS (skinning) --
+  Icosphere: []
+  Object_7: ['GLTF_created_0_rootJoint', 'v_weapon_deagle_clip_2', 'v_weapon_deagle_hammer_3', 'v_weapon_deagle_slide_0', 'v_weapon_deagle_trigger_1', 'weapon_hand_r_4']
+
+-- MATERIALS --
+  weapon_pist_deagle
+
+-- ARMATURES / BONES --
+  armature 'GLTF_created_0' bones=6
+    GLTF_created_0_rootJoint         parent=<root>
+    weapon_hand_r_4                  parent=GLTF_created_0_rootJoint
+    v_weapon_deagle_slide_0          parent=weapon_hand_r_4
+    v_weapon_deagle_trigger_1        parent=weapon_hand_r_4
+    v_weapon_deagle_clip_2           parent=weapon_hand_r_4
+    v_weapon_deagle_hammer_3         parent=weapon_hand_r_4
+
+-- ACTIONS (animations) --
+  dropped                                  frames=0.0..0.0 fcurves=35 targets=['v_weapon_deagle_clip_2', 'v_weapon_deagle_hammer_3', 'v_weapon_deagle_slide_0', 'v_weapon_deagle_trigger_1', 'weapon_hand_r_4']
+  dropped_weapons/models/awp/weapon_snip_awp.vmdl_c frames=0.0..0.0 fcurves=7 targets=['weapon_hand_r_4']
+  firstperson_draw                         frames=0.0..24.0 fcurves=50 targets=['v_weapon_deagle_clip_2', 'v_weapon_deagle_hammer_3', 'v_weapon_deagle_slide_0', 'v_weapon_deagle_trigger_1', 'weapon_hand_r_4']
+  firstperson_draw_weapons/models/awp/weapon_snip_awp.vmdl_c frames=0.0..30.0 fcurves=34 targets=['v_weapon_deagle_clip_2', 'v_weapon_deagle_hammer_3', 'v_weapon_deagle_slide_0', 'v_weapon_deagle_trigger_1', 'weapon_hand_r_4']
+  firstperson_idle                         frames=0.0..0.0 fcurves=35 targets=['v_weapon_deagle_clip_2', 'v_weapon_deagle_hammer_3', 'v_weapon_deagle_slide_0', 'v_weapon_deagle_trigger_1', 'weapon_hand_r_4']
+  firstperson_idle_weapons/models/awp/weapon_snip_awp.vmdl_c frames=0.0..0.0 fcurves=7 targets=['weapon_hand_r_4']
+  firstperson_lookat01                     frames=0.0..136.0 fcurves=50 targets=['v_weapon_deagle_clip_2', 'v_weapon_deagle_hammer_3', 'v_weapon_deagle_slide_0', 'v_weapon_deagle_trigger_1', 'weapon_hand_r_4']
+  firstperson_lookat01_end                 frames=0.0..33.0 fcurves=50 targets=['v_weapon_deagle_clip_2', 'v_weapon_deagle_hammer_3', 'v_weapon_deagle_slide_0', 'v_weapon_deagle_trigger_1', 'weapon_hand_r_4']
+  firstperson_lookat01_end_weapons/models/awp/weapon_snip_awp.vmd frames=0.0..50.0 fcurves=34 targets=['v_weapon_deagle_clip_2', 'v_weapon_deagle_hammer_3', 'v_weapon_deagle_slide_0', 'v_weapon_deagle_trigger_1', 'weapon_hand_r_4']
+  firstperson_lookat01_loop                frames=0.0..32.0 fcurves=47 targets=['v_weapon_deagle_clip_2', 'v_weapon_deagle_hammer_3', 'v_weapon_deagle_slide_0', 'v_weapon_deagle_trigger_1', 'weapon_hand_r_4']
+  firstperson_lookat01_loop_weapons/models/awp/weapon_snip_awp.vm frames=0.0..44.0 fcurves=34 targets=['v_weapon_deagle_clip_2', 'v_weapon_deagle_hammer_3', 'v_weapon_deagle_slide_0', 'v_weapon_deagle_trigger_1', 'weapon_hand_r_4']
+  firstperson_lookat01_start               frames=0.0..102.0 fcurves=41 targets=['v_weapon_deagle_clip_2', 'v_weapon_deagle_hammer_3', 'v_weapon_deagle_slide_0', 'v_weapon_deagle_trigger_1', 'weapon_hand_r_4']
+  firstperson_lookat01_start_weapons/models/awp/weapon_snip_awp.v frames=0.0..69.0 fcurves=34 targets=['v_weapon_deagle_clip_2', 'v_weapon_deagle_hammer_3', 'v_weapon_deagle_slide_0', 'v_weapon_deagle_trigger_1', 'weapon_hand_r_4']
+  firstperson_lookat01_weapons/models/awp/weapon_snip_awp.vmdl_c frames=0.0..120.0 fcurves=19 targets=['v_weapon_deagle_clip_2', 'v_weapon_deagle_hammer_3', 'v_weapon_deagle_slide_0', 'v_weapon_deagle_trigger_1', 'weapon_hand_r_4']
+  firstperson_lookat02                     frames=0.0..204.0 fcurves=41 targets=['v_weapon_deagle_clip_2', 'v_weapon_deagle_hammer_3', 'v_weapon_deagle_slide_0', 'v_weapon_deagle_trigger_1', 'weapon_hand_r_4']
+  firstperson_lookat02_end                 frames=0.0..130.0 fcurves=47 targets=['v_weapon_deagle_clip_2', 'v_weapon_deagle_hammer_3', 'v_weapon_deagle_slide_0', 'v_weapon_deagle_trigger_1', 'weapon_hand_r_4']
+  firstperson_lookat02_loop                frames=0.0..21.0 fcurves=44 targets=['v_weapon_deagle_clip_2', 'v_weapon_deagle_hammer_3', 'v_weapon_deagle_slide_0', 'v_weapon_deagle_trigger_1', 'weapon_hand_r_4']
+  firstperson_lookat02_start               frames=0.0..73.0 fcurves=44 targets=['v_weapon_deagle_clip_2', 'v_weapon_deagle_hammer_3', 'v_weapon_deagle_slide_0', 'v_weapon_deagle_trigger_1', 'weapon_hand_r_4']
+  firstperson_reload                       frames=0.0..52.0 fcurves=47 targets=['v_weapon_deagle_clip_2', 'v_weapon_deagle_hammer_3', 'v_weapon_deagle_slide_0', 'v_weapon_deagle_trigger_1', 'weapon_hand_r_4']
+  firstperson_reload_weapons/models/awp/weapon_snip_awp.vmdl_c frames=0.0..88.0 fcurves=19 targets=['v_weapon_deagle_clip_2', 'v_weapon_deagle_hammer_3', 'v_weapon_deagle_slide_0', 'v_weapon_deagle_trigger_1', 'weapon_hand_r_4']
+  firstperson_shoot1                       frames=0.0..16.0 fcurves=50 targets=['v_weapon_deagle_clip_2', 'v_weapon_deagle_hammer_3', 'v_weapon_deagle_slide_0', 'v_weapon_deagle_trigger_1', 'weapon_hand_r_4']
+  firstperson_shoot1_additive              frames=0.0..16.0 fcurves=41 targets=['v_weapon_deagle_clip_2', 'v_weapon_deagle_hammer_3', 'v_weapon_deagle_slide_0', 'v_weapon_deagle_trigger_1', 'weapon_hand_r_4']
+  firstperson_shoot1_additive_weapons/models/awp/weapon_snip_awp. frames=0.0..40.0 fcurves=19 targets=['v_weapon_deagle_clip_2', 'v_weapon_deagle_hammer_3', 'v_weapon_deagle_slide_0', 'v_weapon_deagle_trigger_1', 'weapon_hand_r_4']
+  firstperson_shoot1_weapons/models/awp/weapon_snip_awp.vmdl_c frames=0.0..40.0 fcurves=19 targets=['v_weapon_deagle_clip_2', 'v_weapon_deagle_hammer_3', 'v_weapon_deagle_slide_0', 'v_weapon_deagle_trigger_1', 'weapon_hand_r_4']
+  firstperson_shoot2                       frames=0.0..16.0 fcurves=50 targets=['v_weapon_deagle_clip_2', 'v_weapon_deagle_hammer_3', 'v_weapon_deagle_slide_0', 'v_weapon_deagle_trigger_1', 'weapon_hand_r_4']
+  firstperson_shoot2_additive              frames=0.0..16.0 fcurves=41 targets=['v_weapon_deagle_clip_2', 'v_weapon_deagle_hammer_3', 'v_weapon_deagle_slide_0', 'v_weapon_deagle_trigger_1', 'weapon_hand_r_4']
+  firstperson_shoot3                       frames=0.0..16.0 fcurves=50 targets=['v_weapon_deagle_clip_2', 'v_weapon_deagle_hammer_3', 'v_weapon_deagle_slide_0', 'v_weapon_deagle_trigger_1', 'weapon_hand_r_4']
+  firstperson_shoot3_additive              frames=0.0..16.0 fcurves=41 targets=['v_weapon_deagle_clip_2', 'v_weapon_deagle_hammer_3', 'v_weapon_deagle_slide_0', 'v_weapon_deagle_trigger_1', 'weapon_hand_r_4']
+  firstperson_shoot_empty                  frames=0.0..16.0 fcurves=50 targets=['v_weapon_deagle_clip_2', 'v_weapon_deagle_hammer_3', 'v_weapon_deagle_slide_0', 'v_weapon_deagle_trigger_1', 'weapon_hand_r_4']
+  firstperson_shoot_empty_additive         frames=0.0..16.0 fcurves=41 targets=['v_weapon_deagle_clip_2', 'v_weapon_deagle_hammer_3', 'v_weapon_deagle_slide_0', 'v_weapon_deagle_trigger_1', 'weapon_hand_r_4']
+  holstered                                frames=0.0..0.0 fcurves=35 targets=['v_weapon_deagle_clip_2', 'v_weapon_deagle_hammer_3', 'v_weapon_deagle_slide_0', 'v_weapon_deagle_trigger_1', 'weapon_hand_r_4']
+  holstered_weapons/models/awp/weapon_snip_awp.vmdl_c frames=0.0..0.0 fcurves=7 targets=['weapon_hand_r_4']
+  inventory_icon                           frames=0.0..0.0 fcurves=35 targets=['v_weapon_deagle_clip_2', 'v_weapon_deagle_hammer_3', 'v_weapon_deagle_slide_0', 'v_weapon_deagle_trigger_1', 'weapon_hand_r_4']
+  inventory_icon_weapons/models/awp/weapon_snip_awp.vmdl_c frames=0.0..0.0 fcurves=7 targets=['weapon_hand_r_4']
+  inventory_inspect                        frames=0.0..0.0 fcurves=35 targets=['v_weapon_deagle_clip_2', 'v_weapon_deagle_hammer_3', 'v_weapon_deagle_slide_0', 'v_weapon_deagle_trigger_1', 'weapon_hand_r_4']
+  inventory_inspect_weapons/models/awp/weapon_snip_awp.vmdl_c frames=0.0..0.0 fcurves=7 targets=['weapon_hand_r_4']
+  sh_crouch_rifl_deploy_weapons/models/awp/weapon_snip_awp.vmdl_c frames=0.0..0.0 fcurves=7 targets=['weapon_hand_r_4']
+  sh_pstl_catch                            frames=0.0..23.0 fcurves=47 targets=['v_weapon_deagle_clip_2', 'v_weapon_deagle_hammer_3', 'v_weapon_deagle_slide_0', 'v_weapon_deagle_trigger_1', 'weapon_hand_r_4']
+  sh_pstl_deploy                           frames=0.0..24.0 fcurves=47 targets=['v_weapon_deagle_clip_2', 'v_weapon_deagle_hammer_3', 'v_weapon_deagle_slide_0', 'v_weapon_deagle_trigger_1', 'weapon_hand_r_4']
+  sh_pstl_deploy_02                        frames=0.0..24.0 fcurves=47 targets=['v_weapon_deagle_clip_2', 'v_weapon_deagle_hammer_3', 'v_weapon_deagle_slide_0', 'v_weapon_deagle_trigger_1', 'weapon_hand_r_4']
+  sh_pstl_deploy_03                        frames=0.0..0.0 fcurves=32 targets=['v_weapon_deagle_clip_2', 'v_weapon_deagle_hammer_3', 'v_weapon_deagle_slide_0', 'v_weapon_deagle_trigger_1', 'weapon_hand_r_4']
+  sh_pstl_firing                           frames=0.0..9.0 fcurves=47 targets=['v_weapon_deagle_clip_2', 'v_weapon_deagle_hammer_3', 'v_weapon_deagle_slide_0', 'v_weapon_deagle_trigger_1', 'weapon_hand_r_4']
+  sh_pstl_stand_reload                     frames=0.0..61.0 fcurves=44 targets=['v_weapon_deagle_clip_2', 'v_weapon_deagle_hammer_3', 'v_weapon_deagle_slide_0', 'v_weapon_deagle_trigger_1', 'weapon_hand_r_4']
+  sh_rifl_catch_weapons/models/awp/weapon_snip_awp.vmdl_c frames=0.0..0.0 fcurves=13 targets=['v_weapon_deagle_clip_2', 'v_weapon_deagle_hammer_3', 'weapon_hand_r_4']
+  sh_rifl_deploy_02_weapons/models/awp/weapon_snip_awp.vmdl_c frames=0.0..23.0 fcurves=34 targets=['v_weapon_deagle_clip_2', 'v_weapon_deagle_hammer_3', 'v_weapon_deagle_slide_0', 'v_weapon_deagle_trigger_1', 'weapon_hand_r_4']
+  sh_rifl_deploy_03_weapons/models/awp/weapon_snip_awp.vmdl_c frames=0.0..0.0 fcurves=7 targets=['weapon_hand_r_4']
+  sh_rifl_deploy_weapons/models/awp/weapon_snip_awp.vmdl_c frames=0.0..0.0 fcurves=10 targets=['v_weapon_deagle_clip_2', 'weapon_hand_r_4']
+  sh_snip_crouch_firing_additive_weapons/models/awp/weapon_snip_a frames=0.0..35.0 fcurves=29 targets=['v_weapon_deagle_clip_2', 'v_weapon_deagle_hammer_3', 'v_weapon_deagle_slide_0', 'v_weapon_deagle_trigger_1', 'weapon_hand_r_4']
+  sh_snip_firing_additive_weapons/models/awp/weapon_snip_awp.vmdl frames=0.0..35.0 fcurves=42 targets=['v_weapon_deagle_clip_2', 'v_weapon_deagle_hammer_3', 'v_weapon_deagle_slide_0', 'v_weapon_deagle_trigger_1', 'weapon_hand_r_4']
+  sh_snip_stand_reload_weapons/models/awp/weapon_snip_awp.vmdl_c frames=0.0..88.0 fcurves=42 targets=['v_weapon_deagle_clip_2', 'v_weapon_deagle_hammer_3', 'v_weapon_deagle_slide_0', 'v_weapon_deagle_trigger_1', 'weapon_hand_r_4']
+  tools_preview                            frames=0.0..0.0 fcurves=35 targets=['v_weapon_deagle_clip_2', 'v_weapon_deagle_hammer_3', 'v_weapon_deagle_slide_0', 'v_weapon_deagle_trigger_1', 'weapon_hand_r_4']
+  tools_preview_weapons/models/awp/weapon_snip_awp.vmdl_c frames=0.0..0.0 fcurves=7 targets=['weapon_hand_r_4']
+
+-- WORLD BOUNDING BOX --
+  size_x=1.9021 size_y=2.0000 size_z=2.0000
+  min=(-0.9511,-1.0000,-1.0000) max=(0.9511,1.0000,1.0000)
+
+PROFILE_CS2_OK
+Blender 5.2.3 LTS (hash e13b728c6880 built 2026-10-22 01:37:16)
+
+Blender quit

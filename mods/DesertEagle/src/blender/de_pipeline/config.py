@@ -52,6 +52,7 @@ class PipelineConfig:
     units_per_meter: float = 1.0
     align: dict = field(default_factory=dict)
     rig: dict = field(default_factory=dict)
+    retarget: dict = field(default_factory=dict)
     lods: dict = field(default_factory=dict)
     export: dict = field(default_factory=dict)
     raw: dict = field(default_factory=dict)
@@ -112,6 +113,7 @@ def load_config(path: str) -> PipelineConfig:
         "units_per_meter",
         "align",
         "rig",
+        "retarget",
         "lods",
         "export",
     }

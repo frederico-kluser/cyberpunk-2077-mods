@@ -27,6 +27,7 @@ from de_pipeline import align as dp_align  # noqa: E402
 from de_pipeline import export as dp_export  # noqa: E402
 from de_pipeline import lods as dp_lods  # noqa: E402
 from de_pipeline import report as dp_report  # noqa: E402
+from de_pipeline import retarget as dp_retarget  # noqa: E402
 from de_pipeline import rigging as dp_rigging  # noqa: E402
 from de_pipeline import scene as dp_scene  # noqa: E402
 from de_pipeline.config import load_config  # noqa: E402
@@ -60,6 +61,31 @@ class Pipeline:
             "vertices_welded": merged,
             "scene": dp_scene.scene_stats(),
         }
+
+    def stage_retarget(self) -> dict:
+        """Rename source bones/vertex groups to the .rig bone names and drop
+        junk animation actions (e.g. leftovers from other weapons)."""
+        if not self.source_objects:
+            raise RuntimeError("retarget needs the import stage first")
+        config = self.config.retarget
+        result = {}
+        bone_map = dict(config.get("bone_map", {}))
+        if bone_map:
+            result["bones"] = dp_retarget.retarget_bones(
+                self.source_objects,
+                bone_map,
+                armature_name=str(config.get("armature", "")),
+            )
+        drop_names = list(config.get("drop_objects", []))
+        if drop_names:
+            dropped, kept = dp_retarget.drop_objects(self.source_objects, drop_names)
+            result["dropped_objects"] = dropped
+            self.source_objects = kept
+        result["actions"] = dp_retarget.prune_actions(
+            keep_prefixes=list(config.get("keep_action_prefixes", [])),
+            drop_substrings=list(config.get("drop_action_substrings", [])),
+        )
+        return result
 
     def stage_align(self) -> dict:
         if not self.source_objects:

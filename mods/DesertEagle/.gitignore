@@ -37,3 +37,6 @@ assets/_inventory/rig_json/
 # grandes, .gif) — fica na worktree, nunca versionado. Colocado DEPOIS de
 # `!docs/**/*.png` para garantir que a regra vence a re-inclusão.
 docs/renders/anim/
+
+# Renders de trabalho do modelo CS2 (stills + frames de animação) — worktree.
+docs/renders/cs2/

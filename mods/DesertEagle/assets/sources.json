@@ -52,13 +52,25 @@
     }
   ],
   "selected": {
-    "id": "poly-pizza-rigged-desert-eagle",
-    "title": "Rigged Desert Eagle",
-    "author": "PuKkBuMXDD (Артур Мигранов)",
-    "source": "https://poly.pizza/m/e9k4dwOzCX",
-    "license": "CC-BY 3.0",
-    "format": "glb",
-    "local_path": "mods/DesertEagle/assets/raw/desert_eagle_poly.glb",
-    "attribution": "\"Rigged Desert Eagle\" by PuKkBuMXDD (Артур Мигранов) — https://poly.pizza/m/e9k4dwOzCX — licensed under CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/)."
+    "id": "cs2-desert-eagle-owner",
+    "title": "pistol__desert_eagle_weapon_model_cs2.glb",
+    "author": "fornecido pelo DONO do projeto (ficheiro em C:/Users/kluse/Downloads)",
+    "source": "origem interna do ficheiro: weapon_pist_deagle.vmdl_c (Counter-Strike 2 / Source 2), empacotado em glTF e distribuído via Sketchfab",
+    "license": "NÃO VERIFICADA — asset de terceiros com IP da Valve (CS2); uso interno/desenvolvimento por decisão do dono, NÃO distribuir publicamente sem resolver a licença",
+    "format": "glb (44.368.992 bytes)",
+    "local_path": "mods/DesertEagle/assets/raw/desert_eagle_cs2.glb",
+    "attribution": null,
+    "selected_on": "2026-10-23",
+    "selected_reason": "Escolha explícita do dono: modelo CS2 de alta qualidade, pré-skinned com 6 ossos (slide/trigger/clip/hammer/hand/root) e 50 animações primeiro-pessoa prontas a calibrar para o CP2077. Resolve o carregador em peça separada (clip -> mag_slot).",
+    "previous_selection": {
+      "id": "poly-pizza-rigged-desert-eagle",
+      "title": "Rigged Desert Eagle",
+      "author": "PuKkBuMXDD (Артур Мигранов)",
+      "source": "https://poly.pizza/m/e9k4dwOzCX",
+      "license": "CC-BY 3.0",
+      "local_path": "mods/DesertEagle/assets/raw/desert_eagle_poly.glb",
+      "attribution": "\"Rigged Desert Eagle\" by PuKkBuMXDD (Артур Мигранов) — https://poly.pizza/m/e9k4dwOzCX — licensed under CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/).",
+      "note": "Ainda no projeto como modelo de referência/estúdio (docs/renders/)."
+    }
   }
 }

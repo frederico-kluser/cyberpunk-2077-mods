@@ -14,4 +14,4 @@ Stages (see run_pipeline.py):
 
 __version__ = "0.1.0"
 
-STAGES = ("import", "align", "rig", "lods", "export", "report")
+STAGES = ("import", "retarget", "align", "rig", "lods", "export", "report")
