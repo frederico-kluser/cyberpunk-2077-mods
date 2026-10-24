@@ -205,8 +205,20 @@ def main():
     hero = (Vector((0, -1, 0)) * 0.72 + (-side) * 0.62 + up * 0.42).normalized()
 
     ok = 0
+    # the shipped .anims carry the grip alignment A in the ROOT local
+    # (re_to_anims pins barrel_plug to A @ rest) — mirror that here
+    align_path = os.path.join(MOD_ROOT, "assets", "work", "de_align.json")
+    A = np.eye(4)
+    if os.path.exists(align_path):
+        ad = json.load(open(align_path, encoding="utf-8"))
+        A = np.eye(4)
+        A[:3, :3] = np.array(ad["R"])
+        A[:3, 3] = ad["t"]
+        print(f"GRIP_ALIGN applied {np.round(A[:3, :3], 3).tolist()}")
     for frame, tag in ((0, "frame00"), (5, "frame05_slideback")):
-        pose_arm = chain(pose_local(poses, names, frame), parents)
+        locals_ = pose_local(poses, names, frame)
+        locals_[0] = A @ locals_[0]  # grip alignment lives in the root local
+        pose_arm = chain(locals_, parents)
         posed = skin_positions(geo, names, parents, rest_arm, pose_arm)
         obj = build_mesh(posed, geo)
         bpy.context.view_layer.update()
