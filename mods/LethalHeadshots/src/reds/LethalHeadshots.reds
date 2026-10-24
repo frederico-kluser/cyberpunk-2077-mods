@@ -10,7 +10,12 @@
  * pool to its minimum, which is the engine's own instant-kill path.
  *
  * The on-screen "QUE OTA" label is a plain inkText added to the game's own
- * crosshair container — no Cyber Engine Tweaks, no Codeware, no RED4ext.
+ * crosshair container — no Cyber Engine Tweaks, no Codeware, no RED4ext. The
+ * widget lives in gameuiCrosshairContainerController's own widget tree: that
+ * controller always owns its root widget, while the player puppet may not
+ * exist yet when the HUD initializes (and is a fresh instance after every
+ * loading screen). The player only holds a bridge to the live controller,
+ * re-established on every OnPlayerAttach.
  */
 
 module LethalHeadshots
@@ -21,24 +26,82 @@ import LethalHeadshots.Config.*
 @addField(PlayerPuppet)
 public let m_lhAimOnHead: Bool;
 
-// Root of the game's crosshair container, captured when the HUD initializes.
+// Bridge to the live crosshair HUD controller, re-established on every
+// OnInitialize / OnPlayerAttach so it survives loading screens and respawns.
 @addField(PlayerPuppet)
-public let m_lhHudRoot: wref<inkCompoundWidget>;
+public let m_lhCrosshair: wref<gameuiCrosshairContainerController>;
 
-// The label widget, created lazily on the first headshot aim.
-@addField(PlayerPuppet)
-public let m_lhText: wref<inkText>;
+// The label widget, created lazily inside the controller's widget tree.
+@addField(gameuiCrosshairContainerController)
+public let m_lhText: ref<inkText>;
 
 @wrapMethod(gameuiCrosshairContainerController)
 protected cb func OnInitialize() -> Bool {
   let ret: Bool = wrappedMethod();
+  this.m_lhText = null;
   let player: ref<PlayerPuppet> = GetPlayer(GetGameInstance());
   if IsDefined(player) {
-    player.m_lhHudRoot = this.GetRootWidget() as inkCompoundWidget;
-    player.m_lhText = null;
+    player.m_lhCrosshair = this;
     player.m_lhAimOnHead = false;
   };
   return ret;
+}
+
+// The reliable bridge point: OnPlayerAttach receives the player as a parameter,
+// so it does not depend on GetPlayer() being ready when the HUD initializes.
+@wrapMethod(gameuiCrosshairContainerController)
+protected cb func OnPlayerAttach(playerGameObject: ref<GameObject>) -> Bool {
+  let ret: Bool = wrappedMethod(playerGameObject);
+  this.m_lhText = null;
+  let player: ref<PlayerPuppet> = playerGameObject as PlayerPuppet;
+  if IsDefined(player) {
+    player.m_lhCrosshair = this;
+    player.m_lhAimOnHead = false;
+  };
+  return ret;
+}
+
+// Shows or hides the label. The widget is created on first use, directly under
+// the controller's root widget — the controller always has its widget tree, so
+// creation never depends on the player or on the HUD initialization order.
+@addMethod(gameuiCrosshairContainerController)
+public final func LhSetLabelVisible(visible: Bool) -> Void {
+  if !visible {
+    if IsDefined(this.m_lhText) {
+      this.m_lhText.SetVisible(false);
+    };
+    return;
+  };
+
+  if !IsDefined(this.m_lhText) {
+    let root: wref<inkCompoundWidget> = this.GetRootCompoundWidget();
+    if !IsDefined(root) {
+      return;
+    };
+
+    let text: ref<inkText> = new inkText();
+    text.SetName(n"LethalHeadshotsQueOta");
+    text.SetText("QUE OTA");
+    text.SetFontFamily("base\\gameplay\\gui\\fonts\\orbitron\\orbitron.inkfontfamily");
+    text.SetFontStyle(n"Bold");
+    text.SetFontSize(44);
+    text.SetAnchor(inkEAnchor.Centered);
+    text.SetAnchorPoint(0.50, 0.50);
+
+    let position: Vector2;
+    position.X = 0.00;
+    position.Y = -140.00;
+    text.SetTranslation(position);
+
+    let color: HDRColor = new HDRColor(1.00, 0.10, 0.10, 1.00);
+    text.SetTintColor(color);
+
+    text.SetVisible(false);
+    text.Reparent(root);
+    this.m_lhText = text;
+  };
+
+  this.m_lhText.SetVisible(true);
 }
 
 @wrapMethod(DamageSystem)
@@ -69,63 +132,29 @@ public final func ClearPreviewTargetStruct() -> Void {
   };
 }
 
+// Mirrors the kill guards: the label is on exactly when the next shot on the
+// head would kill. Anything else — an invalid, dead or player target included —
+// counts as "not over a lethal head", so the label never sticks on screen.
 func UpdateAimLabel(hitEvent: ref<gameHitEvent>) -> Void {
-  let target: ref<ScriptedPuppet> = hitEvent.target as ScriptedPuppet;
-  if !IsDefined(target) || target.IsDead() || target.IsPlayer() {
-    return;
-  };
-
-  let player: ref<PlayerPuppet> = GetPlayer(target.GetGame());
+  let player: ref<PlayerPuppet> = GetPlayer(GetGameInstance());
   if !IsDefined(player) {
     return;
   };
 
-  let overHead: Bool = IsHeadshot(hitEvent) && !ShouldSpare(target);
+  let target: ref<ScriptedPuppet> = hitEvent.target as ScriptedPuppet;
+  let overHead: Bool = IsDefined(target) && !target.IsDead() && !target.IsPlayer() && IsHeadshot(hitEvent) && !ShouldSpare(target);
   if Equals(overHead, player.m_lhAimOnHead) {
     return;
   };
+
   player.m_lhAimOnHead = overHead;
   SetQueOtaVisible(player, overHead);
 }
 
 func SetQueOtaVisible(player: ref<PlayerPuppet>, visible: Bool) -> Void {
-  if !visible {
-    if IsDefined(player.m_lhText) {
-      player.m_lhText.SetVisible(false);
-    };
-    return;
+  if IsDefined(player.m_lhCrosshair) {
+    player.m_lhCrosshair.LhSetLabelVisible(visible);
   };
-
-  if !IsDefined(player.m_lhHudRoot) {
-    return;
-  };
-
-  if !IsDefined(player.m_lhText) {
-    let text: ref<inkText> = new inkText();
-    text.SetText("QUE OTA");
-    text.SetFontFamily("base\\gameplay\\gui\\fonts\\orbitron\\orbitron.inkfontfamily");
-    text.SetFontStyle(n"Bold");
-    text.SetFontSize(44);
-    text.SetAnchor(inkEAnchor.Centered);
-    text.SetAnchorPoint(0.5, 0.5);
-
-    let position: Vector2;
-    position.X = 0.00;
-    position.Y = -140.00;
-    text.SetTranslation(position);
-
-    let color: HDRColor;
-    color.Red = 1.00;
-    color.Green = 0.10;
-    color.Blue = 0.10;
-    color.Alpha = 1.00;
-    text.SetTintColor(color);
-
-    text.Reparent(player.m_lhHudRoot);
-    player.m_lhText = text;
-  };
-
-  player.m_lhText.SetVisible(true);
 }
 
 /*
