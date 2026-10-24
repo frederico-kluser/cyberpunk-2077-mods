@@ -30,6 +30,8 @@ EXPECTED = [
     "desert_eagle\\items\\w_handgun_desert_eagle.mesh",
     "desert_eagle\\items\\desert_eagle.app",
     "desert_eagle\\items\\desert_eagle.ent",
+    "desert_eagle\\items\\textures\\desert_eagle_bc.xbm",
+    "desert_eagle\\items\\textures\\desert_eagle_n.xbm",
     "desert_eagle\\factories\\weapons.csv",
     "desert_eagle\\localization\\en-us.json",
     "desert_eagle\\localization\\pt-br.json",
@@ -80,7 +82,7 @@ def main():
     found = [e.strip() for e in listing.splitlines() if "\\" in e and "." in e]
     for entry in EXPECTED:
         check(any(entry in f for f in found), f"archive contains {entry}")
-    check(len(found) == 6, f"archive has exactly 6 entries (got {len(found)})")
+    check(len(found) == len(EXPECTED), f"archive has exactly {len(EXPECTED)} entries (got {len(found)})")
 
     # 3. round-trip every entry
     out = os.path.join(RELEASE, "_verify")
