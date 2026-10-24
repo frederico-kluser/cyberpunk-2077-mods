@@ -19,6 +19,7 @@ release pipeline.
 | Mod | Version | What it does |
 | --- | --- | --- |
 | [**Lethal Headshots**](mods/LethalHeadshots) | 1.0.1 | Every headshot kills instantly — any NPC, civilians included. No damage multipliers, no boss damage caps; only god-mode/quest-protected targets are spared. |
+| [**Desert Eagle**](mods/DesertEagle) | 0.1.0 | Custom Desert Eagle .50 AE handgun over the Tsunami Nue skeleton and animations, produced by an automated Blender pipeline (alignment, rigging, LODs, export). |
 
 ## Requirements
 
@@ -70,6 +71,13 @@ mods/
   LethalHeadshots/
     mod.json              metadata read by the build/release scripts
     src/reds/             Redscript sources (the actual mod)
+  DesertEagle/
+    mod.json              metadata read by the build/release scripts
+    src/reds/             Redscript helper (spawn/test)
+    src/blender/          automated 3D pipeline (bpy stages + tests)
+    src/tweakxl/          item records (TweakXL)
+    src/archivexl/        entity factory + localization (ArchiveXL)
+    docs/                 pipeline + toolchain documentation
 docs/
   ARCHITECTURE.md         how the damage pipeline works and why the mod hooks it
   TESTING.md              how to validate a change, in and out of the game

@@ -1,0 +1,55 @@
+{
+  "$comment": "Fontes de modelos 3D para a Desert Eagle. Nenhum binário é versionado: este manifesto regista URL, licença e estado. Um modelo só entra no pipeline depois da licença ser confirmada na página de origem.",
+  "requirements": {
+    "license_any_of": ["CC0", "CC-BY", "CC-BY-SA"],
+    "formats_preferred": ["fbx", "glb", "gltf", "blend"],
+    "needs": [
+      "peças móveis separáveis (slide/corrediça, magazine/carregador, trigger/gatilho)",
+      "UVs abertos para texturas PBR",
+      "escala de pistola (comprimento ~25-35 cm) para alinhamento por bounding box"
+    ]
+  },
+  "candidates": [
+    {
+      "id": "iwi-desert-eagle-minte",
+      "title": "IWI Desert Eagle",
+      "author": "Minte Elseviers",
+      "source": "https://sketchfab.com/3d-models/iwi-desert-eagle-f0172d9da95042b083cb0936bed6db4d",
+      "license": "CC-BY (confirmar na página)",
+      "format": "glb/fbx via Sketchfab",
+      "notes": "Referência usada por mods de outras comunidades (ex.: skin de WOTC) — bom sinal de qualidade. Requer conta Sketchfab para download. Exige atribuição do autor.",
+      "status": "candidato preferido"
+    },
+    {
+      "id": "desert-eagle-baked-spawd",
+      "title": "Desert eagle baked",
+      "author": "Spawd",
+      "source": "https://sketchfab.com/3d-models/desert-eagle-baked-17f81cb7db5448ebbd462d8e25885e07",
+      "license": "CC-BY (confirmar na página)",
+      "format": "glb/fbx via Sketchfab",
+      "notes": "Low-poly com bake de alta poligonalidade — adequada a jogo. Derivada do modelo IWI acima.",
+      "status": "candidato"
+    },
+    {
+      "id": "deagle-25k-janaza",
+      "title": "Desert Eagle pistol 2.5K Poly LowPoly Game Ready",
+      "author": "JaNaZa_ZaIb",
+      "source": "https://sketchfab.com/3d-models/desert-eagle-pistol-25k-poly-lowpoly-game-ready-6865171d63ec4d958fe0956d38398d0c",
+      "license": "a confirmar na página",
+      "format": "glb/fbx via Sketchfab",
+      "notes": "Slide, barrel, frame, trigger e sights já em peças — poupa trabalho de separação de submalhas.",
+      "status": "candidato (licença por confirmar)"
+    },
+    {
+      "id": "gamekorp-deagle-cc0",
+      "title": "Deagle (Desert Eagle .50AE pistol)",
+      "author": "gamekorp (Thingiverse) / espelho Creazilla",
+      "source": "https://creazilla.com/tr/media/3d-model/7844106/deagle-desert-eagle-.50ae-pistol",
+      "license": "CC0",
+      "format": "STL (converter para glb/fbx)",
+      "notes": "CC0 puro — sem atribuição. Mas é um STL de impressão 3D: sem peças separadas nem UVs, exige retrabalho no Blender.",
+      "status": "fallback sem atribuição"
+    }
+  ],
+  "selected": null
+}

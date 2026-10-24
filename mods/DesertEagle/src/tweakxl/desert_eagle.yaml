@@ -1,0 +1,38 @@
+# Desert Eagle — registo do item (TweakXL)
+#
+# Aditivo: cria Items.DesertEagle por cima do preset da Tsunami Nue, sem tocar
+# em nenhum registo vanilla. Colocado em r6/tweaks/desert_eagle.yaml.
+#
+# Mapeamentos (ver docs/PIPELINE.md §6):
+#   $base         -> preset da arma base (encontrado no .app extraído)
+#   entityName    -> chave do factory.csv (aponta para o .app novo)
+#   appearanceName-> aparência definida no .app (até ao primeiro sufixo)
+
+Items.DesertEagle:
+  $base: Items.Preset_Nue_Default
+  entityName: desert_eagle_factory
+  appearanceName: desert_eagle
+  displayName: DesertEagle-Name
+  localizedDescription: DesertEagle-Description
+  quality: Quality.Legendary
+  visualTags: [DesertEagleDefault]
+  crosshair: Crosshairs.Tech_Round
+  weaponAudio: wea_set_nue
+  # Anula a compensação IK herdada (senão o retículo fica desalinhado do
+  # impacto quando a geometria muda de forma) — ver matriz de diagnóstico.
+  ikOffset: {x: 0, y: 0, z: 0}
+
+# ---------------------------------------------------------------------------
+# Calibração (docs/PIPELINE.md §7). Descomentar e ajustar em jogo, com
+# Red Hot Tools + Red CLI em modo watch para ver o efeito sem reiniciar.
+#
+# Items.DesertEagle:
+#   CycleTimeBase: 0.25          # razão tempo-de-ciclo / tempo-de-disparo
+#   ReloadTimeBase: 2.1          # velocidade da animação de recarga
+#   EmptyReloadTime: 2.6
+#   RecoilKickMin: 0.05          # deslocamento do coice
+#   RecoilKickMax: 0.12
+#   RecoilTime: 0.1              # tempo até ao recuo máximo
+#   RecoilRecovery: 0.25         # retorno à posição original
+#   RecoilDir: {x: 0, y: 0, z: 1}
+# ---------------------------------------------------------------------------
