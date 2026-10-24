@@ -22,23 +22,23 @@ Items.DesertEagle:
   # impacto quando a geometria muda de forma) — ver matriz de diagnóstico.
   ikOffset: {x: 0, y: 0, z: 0}
   # Liga os modificadores balísticos ao item (sem isto ficam órfãos e a arma
-  # usa os valores herdados da Nue). '+=' APPENDS to the inherited array —
-  # keeps the Nue's own statModifiers intact.
-  statModifiers: += [
-    DesertEagle.Stats.DPS,
-    DesertEagle.Stats.CycleTime,
-    DesertEagle.Stats.MagazineCapacity,
-    DesertEagle.Stats.ReloadTime,
-    DesertEagle.Stats.EmptyReloadTime,
-    DesertEagle.Stats.RecoilKickMin,
-    DesertEagle.Stats.RecoilKickMax,
-    DesertEagle.Stats.RecoilTime,
-    DesertEagle.Stats.RecoilRecovery,
-    DesertEagle.Stats.WeaponNoise,
-    DesertEagle.Stats.HeadshotMultiplier,
-    DesertEagle.Stats.EffectiveRange,
-    DesertEagle.Stats.MaximumRange
-  ]
+  # usa os valores herdados da Nue). Sintaxe TweakXL: tag !append por item
+  # (verificado no código-fonte YamlReader.cpp: AppendOp = FNV1a64("!append")).
+  # NOTA: '+=' NÃO existe em TweakXL — causou crash no load do TweakDB.
+  statModifiers:
+    - !append DesertEagle.Stats.DPS
+    - !append DesertEagle.Stats.CycleTime
+    - !append DesertEagle.Stats.MagazineCapacity
+    - !append DesertEagle.Stats.ReloadTime
+    - !append DesertEagle.Stats.EmptyReloadTime
+    - !append DesertEagle.Stats.RecoilKickMin
+    - !append DesertEagle.Stats.RecoilKickMax
+    - !append DesertEagle.Stats.RecoilTime
+    - !append DesertEagle.Stats.RecoilRecovery
+    - !append DesertEagle.Stats.WeaponNoise
+    - !append DesertEagle.Stats.HeadshotMultiplier
+    - !append DesertEagle.Stats.EffectiveRange
+    - !append DesertEagle.Stats.MaximumRange
 
 # ---------------------------------------------------------------------------
 # Calibração balística — identidade ".50 AE hand cannon"

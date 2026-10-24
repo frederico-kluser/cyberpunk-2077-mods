@@ -80,13 +80,17 @@ def main():
     check(os.path.isfile(yaml), "release/desert_eagle.yaml exists")
 
     # the ballistic modifiers must be LINKED from the item record or they stay
-    # orphaned and the gun silently uses the inherited Nue values (happened once)
+    # orphaned and the gun silently uses the inherited Nue values (happened
+    # once). TweakXL array appends use the `!append` TAG per item (YamlReader
+    # AppendOp) — the `+=` form is invalid and crashed the game at TweakDB load.
     ytxt = open(yaml, encoding="utf-8").read()
     item_block = ytxt.split("Items.DesertEagle:", 1)[-1].split("\nDesertEagle.Stats.", 1)[0]
     check(
-        "statModifiers" in item_block and "DesertEagle.Stats.DPS" in item_block,
-        "yaml links the DesertEagle.Stats modifiers to the item record",
+        "statModifiers" in item_block and item_block.count("!append") >= 13,
+        "yaml links the 13 DesertEagle.Stats modifiers via !append tags",
     )
+    code_lines = [ln for ln in item_block.splitlines() if not ln.strip().startswith("#")]
+    check(not any("+=" in ln for ln in code_lines), "yaml uses no invalid += array syntax")
 
     # 2. archive entries
     listing = wk("archive", archive, "-l", "-v", "Minimal")
