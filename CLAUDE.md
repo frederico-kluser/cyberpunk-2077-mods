@@ -38,6 +38,13 @@
    `timeout-minutes` em todos os jobs; o `context` do ruleset é o **nome do job**.
 8. **Nunca contornar um gate**: se `oss-gate.sh` bloquear, corrija a CAUSA e repita.
    Nunca `--no-verify`, nunca force-push, nunca reescrever histórico partilhado.
+9. **Toda a tarefa termina fundida em `main` — NUNCA deixar um PR aberto** (vale
+   para sempre, em todo o vibe coding deste projeto): qualquer trabalho que mude
+   o repositório corre o fluxo completo até ao fim — branch → commit → push → PR →
+   checks verdes → **`gh pr merge --squash --delete-branch`** → `git pull` na
+   `main`. Criar o PR e parar **não** é terminar a tarefa: o trabalho só está
+   pronto com a `main` atualizada e **zero PRs por fundir**. Única exceção: o
+   utilizador pedir explicitamente para deixar o PR aberto.
 
 ## Regra de reentry (vale para QUALQUER pedido, sempre)
 
@@ -65,7 +72,8 @@ Convencionais nesta máquina — qualquer projeto, qualquer remoto.
 | (sempre, 1.º passo) | `bash C:/Users/kluse/.dsh/skills/opensource-project/scripts/oss-enforce.sh` — reverifica tudo e aplica o que faltar |
 | "commita" / "faz commit" | `bash C:/Users/kluse/.dsh/skills/opensource-project/scripts/oss-gate.sh commit-msg "<msg>"` → `git commit` (o hook `commit-msg` revalida) |
 | "push" / "sobe" | branch ≠ ramos protegidos e nome `<tipo>/<slug>` → `oss-gate.sh push` → `git push -u origin <branch>` |
-| "abre PR" / "faz merge" | título Convencional = mensagem do squash → `gh pr create --base main` → `gh pr checks --watch` → `gh pr merge --squash --delete-branch` |
+| "abre PR" / "faz merge" / qualquer trabalho | título Convencional = mensagem do squash → `gh pr create --base main` → `gh pr checks --watch` → `gh pr merge --squash --delete-branch` → `git pull` — **o fluxo nunca termina num PR aberto** (regra 9) |
+| (sempre, último passo) | terminar com a `main` atualizada e nenhum PR por fundir: merge squash + delete branch + `git pull`; se sobrar um PR aberto, a tarefa está incompleta |
 | "muda/sobe a versão" | `oss-version.py next` → aplicar o valor nos manifestos → `oss-changelog.py --write` |
 | "faz release" / "publica" | `oss-gate.sh release --version X.Y.Z` → commit de release → `git tag -a vX.Y.Z` → `gh release create vX.Y.Z --verify-tag --notes-file` → publicação via CI com secrets em Environment |
 | "muda CI/workflows" | editar `.github/workflows/` → `oss-pin-actions.sh` → confirmar que o nome do job bate certo com o `context` do ruleset |
@@ -77,6 +85,9 @@ Convencionais nesta máquina — qualquer projeto, qualquer remoto.
   `bash C:/Users/kluse/.dsh/skills/opensource-project/scripts/oss-doctor.sh` sem nenhuma linha `[FALTA]` (avisos
   aceitáveis; faltas não — corrigir antes de submeter).
 - Commits Convencionais; versão e changelog coerentes com o que mudou.
+- **`main` atualizada e nenhum PR aberto por fundir** — a tarefa só termina com o
+  merge (`gh pr merge --squash --delete-branch` + `git pull`); um PR aberto não
+  conta como trabalho entregue (regra 9).
 - Reportar ao utilizador: o que mudou, gates cumpridos e URLs criadas (PR/release).
 - Qualquer erro no formato `Erro: <o quê> — Solução: <o que fazer>`.
 
