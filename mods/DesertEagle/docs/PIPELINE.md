@@ -115,6 +115,35 @@ removidas, `resolvedDependencies` limpo e `baseEntity` apontado para o nosso
 - O `baseEntity` da Nue vem **vazio** (`0`) — é o nosso `.app` que aponta para o
   `.ent` (o passo do Modo Fotografia).
 
+### Formato do buffer de geometria (decodificado e verificado)
+
+O `.mesh` guarda os vértices embutidos em base64 (`renderBuffer.Bytes`), com o
+layout descrito por `quantizationOffset/Scale`, `vertexBufferSize`,
+`indexBufferOffset/Size` e um `rendChunk` por submalha. O decodificador
+`scripts/mesh_buffer.py` reconstrói a geometria (verificado: a Nue dá
+0,041 × 0,245 × 0,157 m — pistola real — e todos os índices dentro do intervalo):
+
+```text
+renderBuffer.Bytes (base64)
+├── região de vértices [0 .. vertexBufferSize)
+│   por chunk, por stream (byteOffsets por stream):
+│     stream 0 (16 B/vért): PS_Position PT_Short4N (xyzw int16)   ← posição
+│                           PS_SkinIndices PT_UByte4              ← ossos
+│                           PS_SkinWeights PT_UByte4N             ← pesos
+│     stream 1  (4 B/vért): PS_TexCoord PT_Float16_2              ← UV0
+│     stream 2  (8 B/vért): PS_Normal + PS_Tangent (PT_Dec4)      ← normais
+│     stream 3  (8 B/vért): extra (cor/UV1)
+└── região de índices [indexBufferOffset .. +indexBufferSize)
+    uint16 por índice; cada chunk tem teOffset dentro desta região
+    (3 chunks na Nue: 74892 + 5382 + 24 índices)
+
+posição = (int16 / 32767) × quantizationScale + quantizationOffset   [metros]
+```
+
+**Consequência:** o passo GLB → `.mesh` é simétrico — escrever as streams com o
+mesmo layout, os offsets dos chunks e os índices. É o trabalho seguinte (o
+escritor de buffer), depois do qual **nenhum passo de GUI fica no caminho**.
+
 ### Passos no WolvenKit GUI (quando autorizado)
 
 1. Importar o `.glb` por cima do `.mesh` base (o `.mesh` é o contentor; o

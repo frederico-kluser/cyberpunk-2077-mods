@@ -58,6 +58,7 @@ public class LhAimTicker extends DelayCallback {
   private let m_overHead: Bool;
   private let m_targetSeen: Bool;
   private let m_msgTicks: Int32;
+  private let m_ticks: Int32;
   private let m_delayId: DelayID;
 
   // Starts (or restarts) the ticker for a player/controller pair. A previous
@@ -86,6 +87,7 @@ public class LhAimTicker extends DelayCallback {
 
     // Life proof: the ticker started (visible without aiming at anything).
     if DebugProbes() {
+      FTLog("LethalHeadshots: ticker iniciado");
       PushQueOtaMessage(player, "QUE OTA · ticker ativo");
     };
   }
@@ -114,11 +116,20 @@ public class LhAimTicker extends DelayCallback {
     let overHead: Bool = IsCrosshairOnHead(this.m_player, targetSeen);
     this.m_ctrl.LhUpdateOverlay(targetSeen, overHead);
 
-    // Life proofs (DebugProbes): edge-triggered HUD messages, so "nothing at
-    // all" can be told apart from "ticker dead" vs "aim query empty".
+    // Life proofs (DebugProbes): edge-triggered HUD messages AND FTLog markers
+    // (the script runtime log), so "nothing at all" can be told apart from
+    // "ticker dead" vs "aim query empty" both in-game and from the logs.
     if DebugProbes() {
+      this.m_ticks += 1;
+      if this.m_ticks == 1 {
+        FTLog("LethalHeadshots: primeiro tick do ticker");
+      };
       if targetSeen && NotEquals(targetSeen, this.m_targetSeen) {
+        FTLog("LethalHeadshots: alvo detetado sob a mira");
         PushQueOtaMessage(this.m_player, "QUE OTA · alvo sob a mira");
+      };
+      if !targetSeen && this.m_targetSeen {
+        FTLog("LethalHeadshots: mira saiu do alvo");
       };
       this.m_targetSeen = targetSeen;
     };
