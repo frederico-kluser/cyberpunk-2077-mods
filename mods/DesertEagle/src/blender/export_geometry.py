@@ -4,7 +4,7 @@ Runs inside Blender. Pipeline:
   1. import the CS2 model (pre-skinned, separate movable parts);
   2. retarget its vertex groups to the real Nue .rig bone names;
   3. fit the model to the Nue mesh's decoded bounding box (game space, meters);
-  4. merge the parts into LOD chunks (LOD0 + LOD1 copy);
+  4. merge the parts into ONE material chunk (vanilla chunks = material parts);
   5. dump positions/normals/tangents/uvs/skin/indices per chunk.
 
 Usage:
@@ -129,41 +129,42 @@ def main() -> int:
     delta = target_min - smin * scale
     print(f"GEOM fit scale={scale:.6f} delta={tuple(round(v,4) for v in delta)}")
 
-    # build ONE chunk per LOD (LOD1 = same geometry copy)
+    # ONE material chunk (vanilla chunks are per-material parts, NOT LODs —
+    # a duplicated chunk makes the gun render twice over itself; caught by
+    # assets/_inventory/check_chunks.py)
     out_chunks = []
-    for lod in (0, 1):
-        positions, normals, tangents, uvs = [], [], [], []
-        skin_i, skin_w, indices = [], [], []
-        base = 0
-        for name, (verts, ns, uvs_, tris) in data.items():
-            obj = bpy.data.objects[name]
-            si, sw = skin_of(obj, len(verts))
-            for k, v in enumerate(verts):
-                p = v * scale + delta
-                positions.append([round(p.x, 7), round(p.y, 7), round(p.z, 7)])
-                n = ns[k]
-                normals.append([round(n.x, 5), round(n.y, 5), round(n.z, 5)])
-                t = n.cross(Vector((0, 0, 1)))
-                if t.length < 1e-6:
-                    t = Vector((1, 0, 0))
-                t.normalize()
-                tangents.append([round(t.x, 5), round(t.y, 5), round(t.z, 5), 1.0])
-                uvs.append([round(uvs_[k][0], 5), round(uvs_[k][1], 5)])
-                skin_i.append(si[k])
-                skin_w.append([round(x, 5) for x in sw[k]])
-            for tri in tris:
-                indices.extend([tri[0] + base, tri[1] + base, tri[2] + base])
-            base += len(verts)
-        out_chunks.append({
-            "positions": positions,
-            "normals": normals,
-            "tangents": tangents,
-            "uvs": uvs,
-            "skin_indices": skin_i,
-            "skin_weights": skin_w,
-            "indices": indices,
-        })
-        print(f"GEOM chunk{lod} verts={len(positions)} idx={len(indices)}")
+    positions, normals, tangents, uvs = [], [], [], []
+    skin_i, skin_w, indices = [], [], []
+    base = 0
+    for name, (verts, ns, uvs_, tris) in data.items():
+        obj = bpy.data.objects[name]
+        si, sw = skin_of(obj, len(verts))
+        for k, v in enumerate(verts):
+            p = v * scale + delta
+            positions.append([round(p.x, 7), round(p.y, 7), round(p.z, 7)])
+            n = ns[k]
+            normals.append([round(n.x, 5), round(n.y, 5), round(n.z, 5)])
+            t = n.cross(Vector((0, 0, 1)))
+            if t.length < 1e-6:
+                t = Vector((1, 0, 0))
+            t.normalize()
+            tangents.append([round(t.x, 5), round(t.y, 5), round(t.z, 5), 1.0])
+            uvs.append([round(uvs_[k][0], 5), round(uvs_[k][1], 5)])
+            skin_i.append(si[k])
+            skin_w.append([round(x, 5) for x in sw[k]])
+        for tri in tris:
+            indices.extend([tri[0] + base, tri[1] + base, tri[2] + base])
+        base += len(verts)
+    out_chunks.append({
+        "positions": positions,
+        "normals": normals,
+        "tangents": tangents,
+        "uvs": uvs,
+        "skin_indices": skin_i,
+        "skin_weights": skin_w,
+        "indices": indices,
+    })
+    print(f"GEOM chunk0 verts={len(positions)} idx={len(indices)}")
 
     json.dump({"chunks": out_chunks}, open(out_json, "w", encoding="utf-8"))
     print(f"GEOM_OK {out_json}")
