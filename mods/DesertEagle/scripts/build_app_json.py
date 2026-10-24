@@ -141,7 +141,39 @@ def transform_app(app):
                 }
                 print(f"APP_SUMMARY compiledData chunks={before} -> {len(new_comps)} (mirrored components + CruidDict)")
 
+    repoint_anims(app)
     return app
+
+
+OUR_ANIMS = {
+    "w_handgun__tsunami_nue__base1.anims": "desert_eagle\\animations\\w_handgun__tsunami_nue__base1.anims",
+    "w_handgun__tsunami_nue__mag_std.anims": "desert_eagle\\animations\\w_handgun__tsunami_nue__mag_std.anims",
+}
+
+
+def repoint_anims(node):
+    """Point the first-person gameplay animation sets at our CS2 clips.
+
+    Exact basename match only — left/right dual-wield variants and the
+    single-underscore NPC sets intentionally keep the vanilla animations.
+    """
+    if isinstance(node, dict):
+        for k, v in node.items():
+            if k in ("DepotPath", "depotPath") and isinstance(v, dict):
+                val = v.get("$value")
+                if isinstance(val, str):
+                    base = val.rsplit("\\", 1)[-1]
+                    if base in OUR_ANIMS and val != OUR_ANIMS[base]:
+                        v["$value"] = OUR_ANIMS[base]
+                        # keep the path readable/serializable (uint64 storage
+                        # reduces to a hash-only value on re-serialization)
+                        v["$storage"] = "string"
+                        print(f"APP_ANIMS {val} -> {OUR_ANIMS[base]}")
+            else:
+                repoint_anims(v)
+    elif isinstance(node, list):
+        for v in node:
+            repoint_anims(v)
 
 
 def transform_ent(ent, app_components=None):

@@ -32,6 +32,8 @@ EXPECTED = [
     "desert_eagle\\items\\desert_eagle.ent",
     "desert_eagle\\items\\textures\\desert_eagle_bc.xbm",
     "desert_eagle\\items\\textures\\desert_eagle_n.xbm",
+    "desert_eagle\\animations\\w_handgun__tsunami_nue__base1.anims",
+    "desert_eagle\\animations\\w_handgun__tsunami_nue__mag_std.anims",
     "desert_eagle\\factories\\weapons.csv",
     "desert_eagle\\localization\\en-us.json",
     "desert_eagle\\localization\\pt-br.json",
@@ -134,6 +136,32 @@ def main():
     mesh_refs(a0.get("components"), refs)
     vanilla = [r for r in refs if "tsunami_nue" in r]
     check(not vanilla, f"components have no vanilla mesh references (found {len(vanilla)})")
+
+    # the first-person animation sets must point at our CS2 clips — CR2W
+    # stores ResourcePaths as FNV1a-64 hashes, so match string OR hash
+    anim_want = [
+        "desert_eagle\\animations\\w_handgun__tsunami_nue__base1.anims",
+        "desert_eagle\\animations\\w_handgun__tsunami_nue__mag_std.anims",
+    ]
+    want_keys = set(anim_want) | {str(fnv1a64(p)) for p in anim_want}
+    anim_vals = []
+
+    def anim_refs_walk(node):
+        if isinstance(node, dict):
+            for k, v in node.items():
+                if k in ("DepotPath", "depotPath") and isinstance(v, dict):
+                    val = v.get("$value")
+                    if isinstance(val, str):
+                        anim_vals.append(val)
+                else:
+                    anim_refs_walk(v)
+        elif isinstance(node, list):
+            for item in node:
+                anim_refs_walk(item)
+
+    anim_refs_walk(rc)
+    ours = [v for v in anim_vals if v in want_keys]
+    check(len(ours) >= 2, f"app animation sets point at our clips (found {len(ours)} refs)")
 
     # compiledData is a stale cooked cache — provably inert while
     # cookedAppearanceData is empty (the engine renders from the components)
