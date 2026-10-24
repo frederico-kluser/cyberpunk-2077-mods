@@ -40,3 +40,6 @@ docs/renders/anim/
 
 # Renders de trabalho do modelo CS2 (stills + frames de animação) — worktree.
 docs/renders/cs2/
+
+# Dumps serializados de animacoes (mesma politica dos rig_json).
+assets/_inventory/anims_json/
