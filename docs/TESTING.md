@@ -57,6 +57,7 @@ Run these with a fresh save or a save where you can reload freely.
 | 3 | Aim at an enemy's head without shooting (standing, crouched or seated) | The enemy takes no damage; the red **QUE OTA** label appears above the crosshair |
 | 3b | Move the crosshair from the head to the chest | The label disappears immediately |
 | 3c | Aim at a head, then holster the weapon or reload a save | The label disappears, and shows/hides correctly again on the next aim |
+| 3d | Label diagnostics (`DebugProbes = true`): aim at a head | Three channels at once: the crosshair tints **white → orange** (target under it) **→ red** (over a killable head); a **blue bar** (target) and a **red bar** (head) appear above the crosshair; the red **QUE OTA** text appears between them |
 | 4 | Shoot a civilian in the head | Dies (default) — survives only if `SpareCivilians = true` |
 | 5 | Shoot an ally / companion in the head | Dies (default) — survives only if `SpareAllies = true` |
 | 6 | Headshot a boss (e.g. a cyberpsycho) or a quest-protected NPC | Dies (defaults spare nobody) — survives only if `SpareProtectedTargets = true` |
@@ -69,6 +70,18 @@ Run these with a fresh save or a save where you can reload freely.
 
 Record the game version (`Cyberpunk 2077\bin\x64\Cyberpunk2077.exe` → Properties →
 Details) and the redscript version in the pull request.
+
+### Label diagnostics — how to read the three channels
+
+The overlay is instrumented so a missing label pinpoints its own cause:
+
+| What you see while aiming at a head | Meaning | Fix direction |
+| --- | --- | --- |
+| Crosshair stays white even over an enemy | The aim ticker is not running or `GetLookAtObject` finds nothing | ticker / targeting layer |
+| Crosshair turns orange (target) but never red | The ticker runs; the head test never matches | head slot / distance threshold |
+| Crosshair turns red, bars appear, text appears | Everything works | — |
+| Crosshair turns red, bars appear, **no text** | Widgets render, but the `inkText` has no glyphs | font family path |
+| Crosshair turns red, **no bars, no text** | The ticker works, but custom widgets under the crosshair root do not render (parent clipping/geometry) | widget parent/layer |
 
 ## 5. Regression checklist for a patch bump
 

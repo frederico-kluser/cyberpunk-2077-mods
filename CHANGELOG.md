@@ -11,6 +11,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-10-24
+
+### Features
+- **DesertEagle:** CS2 model retarget to Nue rig bones (#17) ([1875e78](https://github.com/frederico-kluser/cyberpunk-2077-mods/commit/1875e78))
+- **DesertEagle:** rig mapping to Nue bones, model provenance, renders (#16) ([4207691](https://github.com/frederico-kluser/cyberpunk-2077-mods/commit/4207691))
+- **lethalheadshots:** force-kill headshots and poll the aim label (#15) ([d4dae69](https://github.com/frederico-kluser/cyberpunk-2077-mods/commit/d4dae69))
+- **DesertEagle:** scaffold weapon mod and Blender pipeline (#13) ([1a6f999](https://github.com/frederico-kluser/cyberpunk-2077-mods/commit/1a6f999))
+- **lethalheadshots:** aim preview label and lethal defaults (#11) ([ad7b0ab](https://github.com/frederico-kluser/cyberpunk-2077-mods/commit/ad7b0ab))
+
+### Bug Fixes
+- **lethalheadshots:** four-channel aim label with vanilla HUD fallback ([6c0a601](https://github.com/frederico-kluser/cyberpunk-2077-mods/commit/6c0a601))
+- **lethalheadshots:** show aim label from the crosshair controller (#14) ([a73ed64](https://github.com/frederico-kluser/cyberpunk-2077-mods/commit/a73ed64))
+
+### Documentation
+- **DesertEagle:** CS2 to Nue animation calibration map (#18) ([2dc8241](https://github.com/frederico-kluser/cyberpunk-2077-mods/commit/2dc8241))
+- require merge to main to finish any task (#12) ([ca2a4f2](https://github.com/frederico-kluser/cyberpunk-2077-mods/commit/ca2a4f2))
+- **research:** add manual de HUD e guia de armas + indice (#10) ([9305f32](https://github.com/frederico-kluser/cyberpunk-2077-mods/commit/9305f32))
+- **research:** add guia de modding tecnico do CP2077 (#9) ([e95cb48](https://github.com/frederico-kluser/cyberpunk-2077-mods/commit/e95cb48))
+- add CoALA project memory and catalog (#8) ([86182d6](https://github.com/frederico-kluser/cyberpunk-2077-mods/commit/86182d6))
+- explain how to add a mod to the monorepo (#5) ([049c2c8](https://github.com/frederico-kluser/cyberpunk-2077-mods/commit/049c2c8))
+
+### Build & CI
+- pin scorecard action to its commit SHA (#7) ([935cf60](https://github.com/frederico-kluser/cyberpunk-2077-mods/commit/935cf60))
+- keep optional release-please automation pinned (#6) ([1ad01a2](https://github.com/frederico-kluser/cyberpunk-2077-mods/commit/1ad01a2))
+- version enterprise commit-message ruleset (#4) ([625f04e](https://github.com/frederico-kluser/cyberpunk-2077-mods/commit/625f04e))
+
 ## [1.1.0] - 2026-10-23
 
 ### Features
