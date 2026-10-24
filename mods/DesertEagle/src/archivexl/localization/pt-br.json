@@ -1,0 +1,34 @@
+{
+  "Header": {
+    "WKitJsonVersion": "0.0.3",
+    "GameVersion": 1600,
+    "DataType": "CR2W"
+  },
+  "Data": {
+    "Version": 195,
+    "BuildVersion": 0,
+    "RootChunk": {
+      "$type": "JsonResource",
+      "cookingPlatform": "PLATFORM_PC",
+      "root": {
+        "HandleId": "0",
+        "Data": {
+          "$type": "localizationPersistenceOnScreenEntries",
+          "entries": [
+            {
+              "$type": "localizationPersistenceOnScreenEntry",
+              "secondaryKey": "DesertEagle-Name",
+              "femaleVariant": "Desert Eagle"
+            },
+            {
+              "$type": "localizationPersistenceOnScreenEntry",
+              "secondaryKey": "DesertEagle-Description",
+              "femaleVariant": "Uma arma de mão calibre .50 Action Express. Corrediça pesada, recuo brutal, silhueta inconfundível — reconstruída de raiz para a Night City."
+            }
+          ]
+        }
+      }
+    },
+    "EmbeddedFiles": []
+  }
+}

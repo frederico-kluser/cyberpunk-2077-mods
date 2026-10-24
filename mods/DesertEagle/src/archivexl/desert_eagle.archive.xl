@@ -1,0 +1,15 @@
+# Desert Eagle — loader config do ArchiveXL
+#
+# Fica ao lado do .archive no jogo:
+#   <Cyberpunk 2077>\archive\pc\mod\desert_eagle.archive
+#   <Cyberpunk 2077>\archive\pc\mod\desert_eagle.archive.xl   <- este ficheiro
+#
+# Diz ao ArchiveXL que recursos do .archive devem ser fundidos com os do jogo
+# (o jogo nunca é modificado diretamente).
+
+factories:
+  - desert_eagle\factories\weapons.csv
+localization:
+  onscreens:
+    en-us: desert_eagle\localization\en-us.json
+    pt-br: desert_eagle\localization\pt-br.json

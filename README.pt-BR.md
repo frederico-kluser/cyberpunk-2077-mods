@@ -18,6 +18,7 @@ validação e release.
 | Mod | Versão | O que faz |
 | --- | --- | --- |
 | [**Lethal Headshots**](mods/LethalHeadshots) | 1.0.1 | Todo headshot mata na hora — qualquer NPC, civis incluídos. Sem multiplicadores de dano e sem o teto dos bosses; só NPCs com god mode/protegidos por missão são poupados. |
+| [**Desert Eagle**](mods/DesertEagle) | 0.1.0 | Pistola Desert Eagle .50 AE por cima do esqueleto e das animações da Tsunami Nue, produzida por um pipeline automatizado de Blender (alinhamento, rigging, LODs, exportação). |
 
 ## Requisitos
 
@@ -69,6 +70,13 @@ mods/
   LethalHeadshots/
     mod.json              metadados lidos pelos scripts de build/release
     src/reds/             código Redscript (o mod propriamente dito)
+  DesertEagle/
+    mod.json              metadados lidos pelos scripts de build/release
+    src/reds/             helper Redscript (spawn/teste)
+    src/blender/          pipeline 3D automatizado (etapas bpy + testes)
+    src/tweakxl/          registos do item (TweakXL)
+    src/archivexl/        entity factory + traduções (ArchiveXL)
+    docs/                 documentação do pipeline e da toolchain
 docs/
   ARCHITECTURE.md         como o pipeline de dano funciona e porque o mod o interceta
   TESTING.md              como validar uma alteração, dentro e fora do jogo

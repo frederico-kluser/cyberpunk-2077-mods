@@ -1,0 +1,20 @@
+{
+  "id": "DesertEagle",
+  "name": "Desert Eagle",
+  "version": "0.1.0",
+  "gameVersion": "2.5",
+  "author": "Frederico Kluser",
+  "license": "MIT",
+  "description": "Custom Desert Eagle .50 AE handgun for Cyberpunk 2077: new mesh over the Tsunami Nue skeleton/animations, produced by an automated Blender pipeline (alignment, rigging, LODs, animation retargeting).",
+  "homepage": "https://github.com/frederico-kluser/cyberpunk-2077-mods/tree/main/mods/DesertEagle",
+  "tags": ["weapon", "model", "archivexl", "tweakxl", "blender", "pipeline"],
+  "requires": {
+    "redscript": ">=0.5.32",
+    "archivexl": ">=1.18.0",
+    "tweakxl": ">=1.10.0"
+  },
+  "files": [
+    "src/reds/DesertEagle.reds",
+    "src/reds/Config.reds"
+  ]
+}

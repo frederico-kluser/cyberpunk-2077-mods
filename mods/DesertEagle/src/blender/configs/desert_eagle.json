@@ -1,0 +1,33 @@
+{
+  "project_root": "C:/Users/kluse/Projects/cyberpunk-2077-desert-eagle/mods/DesertEagle",
+  "source_model": "assets/raw/desert_eagle.fbx",
+  "base_template": "assets/extracted/w_handgun_nue.glb",
+  "out_dir": "assets/work",
+  "units_per_meter": 1.0,
+  "align": {
+    "match_bbox": true,
+    "scale_mode": "diagonal",
+    "anchor_source": "bbox_min",
+    "anchor_template": "bbox_min"
+  },
+  "rig": {
+    "armature": "w_handgun_nue",
+    "max_influences": 8,
+    "weights": 1.0,
+    "bones": [],
+    "vertex_groups": {
+      "Slide": ["slide", "corredica"],
+      "Magazine": ["mag", "magazine", "carregador"],
+      "Trigger": ["trigger", "gatilho"]
+    }
+  },
+  "lods": {
+    "levels": [0, 1],
+    "naming": "{name}_LOD{level}"
+  },
+  "export": {
+    "filename": "w_handgun_desert_eagle.glb",
+    "with_materials": true,
+    "with_rig": true
+  }
+}

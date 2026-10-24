@@ -1,0 +1,25 @@
+# Artefactos de trabalho do pipeline 3D — nunca versionar binários.
+# (Fontes, scripts e documentos SIM são versionados.)
+assets/raw/
+assets/extracted/
+assets/work/
+assets/glb_staging/
+*.blend
+*.blend1
+*.glb
+*.gltf
+*.fbx
+*.obj
+*.xbm
+*.mesh
+*.rig
+*.anims
+*.ent
+*.app
+*.archive
+*.re
+*.mlsetup
+*.mlmask
+*.effect
+*.particle
+!docs/**/*.png

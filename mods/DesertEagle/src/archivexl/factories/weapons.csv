@@ -1,0 +1,28 @@
+{
+  "Header": {
+    "WKitJsonVersion": "0.0.3",
+    "GameVersion": 1600,
+    "DataType": "CR2W"
+  },
+  "Data": {
+    "Version": 195,
+    "BuildVersion": 0,
+    "RootChunk": {
+      "$type": "C2dArray",
+      "compiledData": [
+        [
+          "desert_eagle_factory",
+          "desert_eagle\\items\\desert_eagle.app",
+          "true"
+        ]
+      ],
+      "compiledHeaders": [
+        "name",
+        "path",
+        "preload"
+      ],
+      "cookingPlatform": "PLATFORM_PC"
+    },
+    "EmbeddedFiles": []
+  }
+}
