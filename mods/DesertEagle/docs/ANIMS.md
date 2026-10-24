@@ -122,6 +122,22 @@ nome da animação interna (regra do compilador).
 HDF5 são `vlen bytes` (não `object`) e os grupos de topo do `.re_skeleton` são
 ossos raiz (o starter tem `Root` porque o osso raiz se chama `Root`).
 
+## Convenção de repouso e o alinhamento do grip (verificado)
+
+O motor deriva o repouso do skinning do **`.rig`** — provado: o clip estático
+vanilla `weapon_empty` tem as chaves de 10/11 ossos **iguais ao repouso do
+rig** (a única diferença é o `slide` 4 cm atrás — intencional: arma vazia =
+corrediça trancada). Ver `assets/_inventory/check_rest_convention.py`.
+
+Como a malha fica no ângulo de grip do CS2 (o corpo liga-se ao osso da mão do
+CS2), o alinhamento vanilla faz-se com **uma rotação A na local do osso raiz
+das animações** (`barrel_plug` fixado a `A @ repouso`):
+
+- `export_geometry.py` calcula A (24 rotações, melhor bbox vanilla) → `assets/work/de_align.json`
+- `re_to_anims.py` aplica A ao root de todos os clips (Python puro)
+- resultado: o sistema coerente inteiro (corpo + peças) roda à volta do rig
+  root — o root local é literalmente o "puxador" do grip
+
 ## Bloqueio: `.re` → `.anims` requer `redMod.exe`
 
 - `wolvenkit-cli import` delega o import `.re` no **`redMod.exe`** → *"redMod.exe
